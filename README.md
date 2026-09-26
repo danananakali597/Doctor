@@ -6,6 +6,8 @@ Discord bot with security controls and VEX Cinema. No AI provider calls remain. 
 
 A server administrator sets the title and an authorized direct HTTPS video URL in the Cinema dashboard. Members sign in through Discord, open the watch room, and watch the same video with synchronized play, pause and position. The public `/cinema` command shares the room link. Only current server members can read its state; only members with Manage Server can change it. This is a synchronized web player, not a Discord voice-channel Go Live stream or an embedded Discord Activity. Every browser fetches the video directly from its host; use media you have permission to share. A normal YouTube page link is not a direct video URL.
 
+Any server member can use `/watch url:<video> title:<optional> private:<optional>` to create a polished Discord movie card and a seven-day link. Each person independently chooses and plays their own film in the web player. It supports direct HTTPS browser-playable video files and public embeddable YouTube videos. Private mode makes the card visible only to the command user. Embedded, DRM-protected and subscription-provider film pages are not generally supported; the bot does not Go Live in a Discord voice channel.
+
 ## Plans
 
 Basic: message spam/links/invites/mentions/words/caps and length filters, logs, join/leave monitoring.
@@ -40,7 +42,7 @@ New modules are OFF except logs and join/leave monitoring. Responses default to 
 
 ## Commands
 
-`/security`, `/verify member`, `/scan`, `/lockdown enabled`, `/cinema`. Global registration replaces the old AI/voice/general command list.
+`/security`, `/verify member`, `/scan`, `/lockdown enabled`, `/cinema`, `/watch url`. Global registration replaces the old AI/voice/general command list.
 
 ## Validation
 
