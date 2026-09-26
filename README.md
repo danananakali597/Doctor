@@ -1,16 +1,6 @@
 # VEX Security 2.0
 
-Discord bot with security controls and VEX Cinema. No AI provider calls remain. The deployable source is bundled in `KurdBot.zip` for the Railway Dockerfile.
-
-## Cinema
-
-A server administrator sets an authorized direct HTTPS video URL and scheduled start time in the Cinema dashboard. Members watch the same server-clock position; only an administrator can pause, resume or end a film. The public `/cinema` command shares the room link and scheduled time. Only current server members can read its state; only members with Administrator can change it. Browser autoplay with sound may require a viewer to tap Join. This is synchronized playback, not a Discord voice-channel Go Live broadcast.
-
-The embedded Activity frontend is served at `/activity/` and uses Discord's Embedded App SDK, `identify` OAuth, fresh bot-side guild membership checks and administrator-only controls. Run `npm run build:activity` after changing `activity/main.js`; `public/activity/main.js` is the deployable bundle. To launch it in Discord, enable Activities for this Discord application and set its URL mapping **prefix `/` → target `doctor-production-f9bb.up.railway.app/activity/`** (without `https://`). Enable the supported platforms and test the Activity from a voice channel. This portal configuration has not been completed or live-tested yet.
-
-Discord Activities proxy and sandbox external resources. A direct video host must be permitted by the app's URL mappings and support playback in the client; arbitrary movie website pages, YouTube watch URLs, subscription/DRM sources, and cross-site player pages are not direct video sources. Do not use an unrestricted server-side proxy to evade restrictions. Use video you have permission to share.
-
-Any server member can use `/watch url:<video> title:<optional> private:<optional>` to create a polished Discord movie card and a seven-day link. Each person independently chooses and plays their own film in the web player. It supports direct HTTPS browser-playable video files and public embeddable YouTube videos. Private mode makes the card visible only to the command user. Embedded, DRM-protected and subscription-provider film pages are not generally supported; the bot does not Go Live in a Discord voice channel.
+Discord bot with security controls. No AI provider calls remain. The deployable source is bundled in `KurdBot.zip` for the Railway Dockerfile.
 
 ## Plans
 
@@ -46,7 +36,7 @@ New modules are OFF except logs and join/leave monitoring. Responses default to 
 
 ## Commands
 
-`/security`, `/verify member`, `/scan`, `/lockdown enabled`, `/cinema`, `/watch url`. Global registration replaces the old AI/voice/general command list.
+`/security`, `/verify member`, `/scan`, `/lockdown enabled`. Global registration replaces the old AI/voice/general command list.
 
 ## Validation
 
