@@ -1,6 +1,6 @@
-# VEX Security 2.0
+# VEX Community OS 3.0
 
-Discord bot with security controls. The deployable source is bundled in `KurdBot.zip` for the Railway Dockerfile. The dashboard has grouped navigation, tier filters and per-module controls in English, Arabic, Sorani and Turkish.
+Discord bot with community, moderation and security controls. The deployable source is bundled in `KurdBot.zip` for the Railway Dockerfile. The dashboard has grouped navigation, tier filters and per-module controls in English, Arabic, Sorani and Turkish.
 
 ## Plans
 
@@ -49,3 +49,34 @@ Server logs provides 50 independent event controls across members, messages, mod
 Only events observed while the bot is online are recorded. Message bodies and attachments are not retained; edits/deletions log available IDs. Uncached authors may be unavailable. Audit entries provide actors only for the corresponding audit events; no actor is guessed for gateway events. Moderator voice move/disconnect records may include a count without individual target IDs. Timeout expiry may not generate a Discord member-update event. The existing 1,000-event retention is shared with security incidents. Backup restoration remaps log destinations, disabling unavailable ones.
 
 Validation includes per-event merge behavior, tenant isolation, disabled delivery, selected color/routing, metadata-only message records, audit actor handling, and channel/permission enforcement.
+
+## Community OS 3.0
+
+Adds 16 configurable modules alongside the existing 34 security modules and 50 log events: server identity, embed studio, utility, welcome/goodbye, auto responses, XP and rank rewards, join roles, self roles, starboard, temporary voice rooms, finite invites, activity counts, support tickets, moderation and creator feeds.
+
+Dashboard: Community modules opens the directory. Each module has typed controls, channel/role selectors, repeatable rules where relevant, and saved-state previews. Tickets, role menus and announcements have an explicit Publish action. Mod actions and Control panel logs are separate views. Dashboard navigation, module descriptions and core controls support English, Arabic, Sorani Kurdish and Turkish. Discord command text currently uses English; custom messages can use any language.
+
+Commands: `/community`, `/ping`, `/server`, `/member`, `/avatar`, `/rank`, `/leaderboard`, `/roles`, `/ticket`, `/invite`, `/room`, `/moderate`, `/cases`, plus the existing security commands. New community modules default OFF and are available without a paid entitlement in this release. Existing Plus/Ultimate security access rules remain enforced. No billing has been activated.
+
+- Tickets deny @everyone View Channel and allow only the requester, support role and bot (Discord administrators can still access). One open ticket per member. Closing preserves the channel but denies the requester further messages; staff may reopen or claim it.
+- Assigned roles must be below VEX and cannot contain administrative/moderation powers. Existing support-team roles are not assigned by the bot.
+- XP ignores bots, short messages, consecutive identical text and messages inside the configured cooldown. Only a hash of the last awarded text is stored. Rewards are cumulative. Counts are retained for 90 days; the dashboard shows 30 days.
+- Starboard counts up to 100 fetched reactors and ignores bots and self-stars. It copies message text only when the source and destination are visible to @everyone. Removed source messages are not guaranteed to remove already-published cards.
+- Temporary rooms are removed when empty. Room ownership and ticket records require persistent storage. `/room` only controls the caller's own VEX room.
+- Moderation enforces the caller's Discord permissions and role hierarchy. Dashboard actions require a server-name confirmation. Clear skips messages older than 14 days. Case records store actor, target, reason and time.
+- Restore-settings disables restored community modules for review of their channel/role references.
+
+### Creator feed configuration
+
+Operator-side environment variables (never put secrets in dashboard messages):
+
+| Provider | Variables | Dashboard source |
+| --- | --- | --- |
+| YouTube | `YOUTUBE_API_KEY` | Channel ID beginning `UC` |
+| Twitch | `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET` | Username |
+| Kick | `KICK_CLIENT_ID`, `KICK_CLIENT_SECRET` | Numeric broadcaster user ID |
+| Reddit | `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_REFRESH_TOKEN` | Subreddit name |
+
+Providers may require approved application access and have quotas. This update does not obtain or activate those credentials. The dashboard shows missing keys, latest provider errors and last successful check. Checks run every ten minutes through fixed official API hosts; the first successful check records a baseline without posting old content. Notifications are deduplicated per source/destination; failed sends retry at the next poll. Only the newest five uploads/posts are fetched, so high-volume feeds can have gaps. Credentials are held server-side. Live-stream notifications can miss broadcasts shorter than the poll interval. Integrations require live validation after credentials are configured.
+
+Keep one replica and mount durable storage before opening the bot to the public. Automated tests cover schema bounds, tenant isolation, XP cooldowns, role safety, ticket privacy/duplicates, authorization and notification baseline/retry behavior. Destructive moderation and external providers are not exercised against real members by automated tests.
