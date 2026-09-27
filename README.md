@@ -1,6 +1,6 @@
 # VEX Security 2.0
 
-Discord bot with security controls. No AI provider calls remain. The deployable source is bundled in `KurdBot.zip` for the Railway Dockerfile.
+Discord bot with security controls. The deployable source is bundled in `KurdBot.zip` for the Railway Dockerfile. The dashboard has grouped navigation, tier filters and per-module controls in English, Arabic, Sorani and Turkish.
 
 ## Plans
 
@@ -36,7 +36,7 @@ New modules are OFF except logs and join/leave monitoring. Responses default to 
 
 ## Commands
 
-`/security`, `/verify member`, `/scan`, `/lockdown enabled`. Global registration replaces the old AI/voice/general command list.
+`/help`, `/security`, `/verify member`, `/scan`, `/lockdown enabled`. Help and security now show a private interactive embed with Basic, Plus, Ultimate and a dashboard link. Global registration replaces the old AI/voice/general command list.
 
 ## Validation
 
