@@ -41,3 +41,11 @@ New modules are OFF except logs and join/leave monitoring. Responses default to 
 ## Validation
 
 `npm run check`; `npm test`. Tests cover filters, expiry, tenant isolation, permissions, authentication, CSRF and plan enforcement. Destructive recovery needs testing in a dedicated Discord test server before public release.
+
+## Per-event server logs
+
+Server logs provides 50 independent event controls across members, messages, moderation, channels/threads, roles, voice, and server changes. Each event has an enable switch, its own text/announcement destination channel, and a six-digit embed color. Includes search, category filters, preview and four dashboard languages. All new log events default OFF. Save applies the configuration; enabled events require a valid destination and View Channel, Send Messages and Embed Links. Audit-derived events additionally require View Audit Log.
+
+Only events observed while the bot is online are recorded. Message bodies and attachments are not retained; edits/deletions log available IDs. Uncached authors may be unavailable. Audit entries provide actors only for the corresponding audit events; no actor is guessed for gateway events. Moderator voice move/disconnect records may include a count without individual target IDs. Timeout expiry may not generate a Discord member-update event. The existing 1,000-event retention is shared with security incidents. Backup restoration remaps log destinations, disabling unavailable ones.
+
+Validation includes per-event merge behavior, tenant isolation, disabled delivery, selected color/routing, metadata-only message records, audit actor handling, and channel/permission enforcement.
