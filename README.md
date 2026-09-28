@@ -1,5 +1,15 @@
 # VEX Community OS 3.0
 
+## Command center 3.3
+
+VEX registers 50 Discord slash commands. `/commands` opens a private, button-driven guide for Community, Voice, Moderation and Protection. `/help` links to the guide and the dashboard. Command replies use branded embeds and protect against unintended mentions.
+
+New community tools include `/roll`, `/profile`, `/title`, `/rep` (one gift per 24 hours), `/credits` (server points), `/points` (moderator adjustments), `/top`, `/setxp`, `/setlevel`, `/resetxp`, `/colors`, `/color`, `/starboard` and `/vip`. Color choices come only from safe, configured self-assignable color roles; VEX does not create elevated roles. XP adjustments do not automatically alter reward roles. Community points are in-server counters, not money or paid credits.
+
+New moderation and voice commands include `/warn`, `/warnings`, `/warn_remove`, `/timeout`, `/untimeout`, `/kick`, `/ban`, `/unban`, `/clear`, `/slowmode`, `/lock`, `/unlock`, `/moveme`, `/move`, `/vkick`, `/setnick` and `/role`. They check current Discord permissions and relevant role/channel restrictions. VEX channel unlock restores the previous public message bit, and refuses to overwrite a change made since the lock. Warning retractions remain in the casebook for audit. Replies are private to the invoker unless an existing module explicitly publishes to a channel.
+
+ProBot also offers features such as an external URL shortener and a separate global economy. VEX does not claim those features. Slash commands may take time to appear after a global Discord registration update. Dashboard security, community and logs controls remain available as before.
+
 Discord bot with community, moderation and security controls. The deployable source is bundled in `KurdBot.zip` for the Railway Dockerfile. The dashboard has grouped navigation, tier filters and per-module controls in English, Arabic, Sorani and Turkish.
 
 ## Plans
