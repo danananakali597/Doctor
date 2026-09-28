@@ -1,10 +1,18 @@
 # VEX Community OS 3.0
 
-## Command center 3.3
+## Community modules 3.4.1
 
-VEX registers 50 Discord slash commands. `/commands` opens a private, button-driven guide for Community, Voice, Moderation and Protection. `/help` links to the guide and the dashboard. Command replies use branded embeds and protect against unintended mentions.
+Utility and its slash commands were removed from the dashboard and Discord registration at the server owner’s request. `/help` and `/commands` remain for discovery. Previously stored utility data is retained in the server database but no longer controls an active module.
 
-New community tools include `/roll`, `/profile`, `/title`, `/rep` (one gift per 24 hours), `/credits` (server points), `/points` (moderator adjustments), `/top`, `/setxp`, `/setlevel`, `/resetxp`, `/colors`, `/color`, `/starboard` and `/vip`. Color choices come only from safe, configured self-assignable color roles; VEX does not create elevated roles. XP adjustments do not automatically alter reward roles. Community points are in-server counters, not money or paid credits.
+## Command center 3.4
+
+The dashboard now places per-command on/off switches and allowed/blocked roles and channels inside the corresponding module, including Leveling, Moderation and Voice. Restrictions are enforced before each slash command runs, alongside Discord permissions; help and command discovery remain available. A blocked role wins over an allowed role. History records changes and supports owner-confirmed restoration. These settings are isolated per server. Discord slash commands do not create invocation messages, so ProBot prefix aliases and deletion of invocation messages do not map to this implementation.
+
+### Previous command release 3.3
+
+VEX registers the remaining Discord slash commands. `/commands` opens a private, button-driven guide for Community, Voice, Moderation and Protection. `/help` links to the guide and the dashboard. Command replies use branded embeds and protect against unintended mentions.
+
+Community tools include `/top`, `/setxp`, `/setlevel`, `/resetxp`, `/colors`, `/color`, `/starboard` and `/vip`. Color choices come only from safe, configured self-assignable color roles; VEX does not create elevated roles. XP adjustments do not automatically alter reward roles. 
 
 New moderation and voice commands include `/warn`, `/warnings`, `/warn_remove`, `/timeout`, `/untimeout`, `/kick`, `/ban`, `/unban`, `/clear`, `/slowmode`, `/lock`, `/unlock`, `/moveme`, `/move`, `/vkick`, `/setnick` and `/role`. They check current Discord permissions and relevant role/channel restrictions. VEX channel unlock restores the previous public message bit, and refuses to overwrite a change made since the lock. Warning retractions remain in the casebook for audit. Replies are private to the invoker unless an existing module explicitly publishes to a channel.
 
@@ -62,11 +70,11 @@ Validation includes per-event merge behavior, tenant isolation, disabled deliver
 
 ## Community OS 3.0
 
-Adds 16 configurable modules alongside the existing 34 security modules and 50 log events: server identity, embed studio, utility, welcome/goodbye, auto responses, XP and rank rewards, join roles, self roles, starboard, temporary voice rooms, finite invites, activity counts, support tickets, moderation and creator feeds.
+Adds 15 configurable modules alongside the existing 34 security modules and 50 log events: server identity, embed studio, welcome/goodbye, auto responses, XP and rank rewards, join roles, self roles, starboard, temporary voice rooms, finite invites, activity counts, support tickets, moderation and creator feeds.
 
-Dashboard: Community modules opens the directory. Each module has typed controls, channel/role selectors, repeatable rules where relevant, and saved-state previews. Tickets, role menus and announcements have an explicit Publish action. Mod actions and Control panel logs are separate views. Dashboard navigation, module descriptions and core controls support English, Arabic, Sorani Kurdish and Turkish. Discord command text currently uses English; custom messages can use any language.
+Dashboard: Community modules opens the directory. Each module has typed controls, channel/role selectors, repeatable rules where relevant, and saved-state previews. Tickets, role menus and announcements have an explicit Publish action. Moderation actions and their casebook are together in one section; Control panel logs remain a separate view. Welcome settings appear only in the Welcome module. Dashboard navigation, module descriptions and core controls support English, Arabic, Sorani Kurdish and Turkish. Discord command text currently uses English; custom messages can use any language.
 
-Commands: `/community`, `/ping`, `/server`, `/member`, `/avatar`, `/rank`, `/leaderboard`, `/roles`, `/ticket`, `/invite`, `/room`, `/moderate`, `/cases`, plus the existing security commands. New community modules default OFF and are available without a paid entitlement in this release. Existing Plus/Ultimate security access rules remain enforced. No billing has been activated.
+Commands: `/rank`, `/leaderboard`, `/roles`, `/ticket`, `/invite`, `/room`, `/moderate`, `/cases`, plus the existing security commands. New community modules default OFF and are available without a paid entitlement in this release. Existing Plus/Ultimate security access rules remain enforced. No billing has been activated.
 
 - Tickets deny @everyone View Channel and allow only the requester, support role and bot (Discord administrators can still access). One open ticket per member. Closing preserves the channel but denies the requester further messages; staff may reopen or claim it.
 - Assigned roles must be below VEX and cannot contain administrative/moderation powers. Existing support-team roles are not assigned by the bot.
