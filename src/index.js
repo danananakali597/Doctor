@@ -1,0 +1,15 @@
+import {installCommandRuntime} from './command-runtime.js';
+import {validateEnv} from './config.js';
+import {installTicketJourney} from './ticket-bootstrap.js';
+validateEnv();
+installTicketJourney();
+installCommandRuntime();
+const {startWeb}=await import('./web.js');
+const {client,startBot}=await import('./bot.js');
+const {attachTicketRefresh,attachTicketInteractions}=await import('./tickets.js');
+attachTicketRefresh(client);
+attachTicketInteractions(client);
+const {attachCommandCore}=await import('./command-core.js');
+attachCommandCore(client);
+startWeb();
+startBot().catch(e=>{console.error('Bot login failed:',e);process.exit(1);});

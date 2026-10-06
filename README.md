@@ -1,3 +1,7 @@
+# VEX Command Core 4.0
+
+Adds a private `/vex` control center, reviewed moderation and lockdown actions, organized module navigation and an actual command directory. The 96 automated tests and syntax checks pass. See [COMMAND_CORE.md](COMMAND_CORE.md) for behavior, hosting compatibility and validation limits.
+
 # VEX Community OS 3.0
 
 ## Community modules 3.4.1
@@ -18,7 +22,7 @@ New moderation and voice commands include `/warn`, `/warnings`, `/warn_remove`, 
 
 ProBot also offers features such as an external URL shortener and a separate global economy. VEX does not claim those features. Slash commands may take time to appear after a global Discord registration update. Dashboard security, community and logs controls remain available as before.
 
-Discord bot with community, moderation and security controls. The deployable source is bundled in `KurdBot.zip` for the Railway Dockerfile. The dashboard has grouped navigation, tier filters and per-module controls in English, Arabic, Sorani and Turkish.
+Discord bot with community, moderation and security controls. The deployable source is checked in directly under `src/` and `public/`; the Railway Dockerfile installs from the checked-in package lock. The dashboard has grouped navigation, tier filters and per-module controls in English, Arabic, Sorani and Turkish.
 
 ## Plans
 

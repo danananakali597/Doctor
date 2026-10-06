@@ -1,0 +1,4 @@
+import 'dotenv/config';
+export const env={token:process.env.DISCORD_TOKEN,clientId:process.env.DISCORD_CLIENT_ID,clientSecret:process.env.DISCORD_CLIENT_SECRET,secret:process.env.SESSION_SECRET,port:Number(process.env.PORT||3000),publicUrl:(process.env.PUBLIC_URL||'http://localhost:3000').replace(/\/$/,''),dataDir:process.env.DATA_DIR||'./data'};
+env.redirectUri=process.env.DISCORD_REDIRECT_URI||env.publicUrl+'/auth/callback';
+export function validateEnv(){for(const[k,v]of Object.entries({DISCORD_TOKEN:env.token,DISCORD_CLIENT_ID:env.clientId,DISCORD_CLIENT_SECRET:env.clientSecret,SESSION_SECRET:env.secret}))if(!v||(k==='SESSION_SECRET'&&v.length<32))throw Error('Missing configuration: '+k);if(new URL(env.publicUrl).hostname!=='localhost'&&!env.publicUrl.startsWith('https://'))throw Error('HTTPS required');}

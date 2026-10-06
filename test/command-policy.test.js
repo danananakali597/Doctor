@@ -1,0 +1,30 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {Collection} from 'discord.js';
+process.env.DATA_DIR=fs.mkdtempSync(path.join(os.tmpdir(),'vex-command-policy-'));
+const {db,saveSettings}=await import('../src/db.js');
+const {commandNames,validateCommandRules,commandAccess}=await import('../src/command-policy.js');
+const first='123456789012345678',second='223456789012345678',role='323456789012345678',channel='423456789012345678';
+test('command rules accept only known commands and bounded Discord IDs',()=>{
+ assert.ok(commandNames.size>=30);
+ for(const name of ['community','ping','server','member','avatar','roll','profile','title','rep','credits','points','vip'])assert.equal(commandNames.has(name),false);
+ assert.throws(()=>validateCommandRules({imaginary:{enabled:false}}),/Unknown command/);
+ assert.throws(()=>validateCommandRules({help:{enabled:false}}),/Keep help/);
+ assert.throws(()=>validateCommandRules({rank:{blockedRoles:['bogus']}}),/Invalid/);
+ assert.throws(()=>validateCommandRules({rank:{magic:true}}),/Unknown/);
+ assert.deepEqual(validateCommandRules({rank:{allowedRoles:[role,role]}}).rank.allowedRoles,[role]);
+});
+test('role deny takes priority, channel limits apply and rules stay in one guild',()=>{
+ saveSettings(first,{commandRules:{rank:validateCommandRules({rank:{allowedRoles:[role],blockedRoles:[role],allowedChannels:[channel]}}).rank}});
+ const member={roles:{cache:new Collection([[role,{id:role}]])}};
+ assert.match(commandAccess(first,'rank',member,{id:channel}),/cannot use/);
+ assert.equal(commandAccess(second,'rank',member,{id:'523456789012345678'}),null);
+ saveSettings(first,{commandRules:{rank:{blockedRoles:[]}}});
+ assert.equal(commandAccess(first,'rank',member,{id:channel}),null);
+ assert.match(commandAccess(first,'rank',member,{id:'523456789012345678'}),/permitted channel/);
+ assert.match(commandAccess(first,'rank',{roles:{cache:new Collection()}},{id:channel}),/selected roles/);
+});
+test.after(()=>{db.close();fs.rmSync(process.env.DATA_DIR,{recursive:true,force:true});});

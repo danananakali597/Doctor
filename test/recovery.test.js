@@ -1,0 +1,13 @@
+import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';import {PermissionFlagsBits as P,Collection} from 'discord.js';
+process.env.DATA_DIR=fs.mkdtempSync(path.join(os.tmpdir(),'vex-recovery-'));
+const {lockdown}=await import('../src/operations.js');const {grant,saveSettings,getState,db}=await import('../src/db.js');
+const guildId='123456789012345678',channelId='123456789012345679';
+let allow=P.SendMessages,deny=P.AttachFiles;
+const overwrite=()=>({allow:{bitfield:allow},deny:{bitfield:deny}});
+const cache=new Collection([[guildId,overwrite()]]);
+const apply=async(_id,patch)=>{for(const[k,v]of Object.entries(patch)){allow&=~P[k];deny&=~P[k];if(v===true)allow|=P[k];if(v===false)deny|=P[k];}cache.set(guildId,overwrite());};
+const channel={permissionOverwrites:{cache,edit:apply,create:apply,delete:async()=>cache.delete(guildId)}};
+const g={id:guildId,channels:{cache:new Collection([[channelId,channel]])}};
+test('lockdown records exact prior state and only changes messaging bits',async()=>{grant(guildId,'ultimate',Date.now()+60000);saveSettings(guildId,{lockdownChannels:[channelId]});await lockdown(g,true,'owner');assert.equal((deny&P.SendMessages)!==0n,true);assert.equal((deny&P.AttachFiles)!==0n,true);assert.equal(getState(guildId,'lockdown')[channelId].allow,String(P.SendMessages));});
+test('expired plan can unlock and unrelated modifications are preserved',async()=>{allow|=P.EmbedLinks;cache.set(guildId,overwrite());grant(guildId,'basic',1);await lockdown(g,false,'owner');assert.equal((allow&P.SendMessages)!==0n,true);assert.equal((allow&P.EmbedLinks)!==0n,true);assert.equal((deny&P.AttachFiles)!==0n,true);assert.deepEqual(getState(guildId,'lockdown'),{});});
+test.after(()=>{db.close();fs.rmSync(process.env.DATA_DIR,{recursive:true,force:true});});

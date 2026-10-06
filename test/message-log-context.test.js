@@ -1,0 +1,12 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {createMessageLogContext} from '../src/message-log-context.js';
+import {buildLogEmbed} from '../src/log-design.js';
+const guild={id:'g'};
+const message=(id='m')=>({guild,id,channelId:'c',author:{id:'u',displayAvatarURL:()=> 'https://cdn.discordapp.com/avatars/u/a.png'},content:'Original message',attachments:new Map()});
+const entry=(overrides={})=>({id:'audit',executorId:'mod',targetId:'u',createdTimestamp:Date.now(),extra:{channel:{id:'c'},count:1},...overrides});
+test('partial deletes recover cached author, text and avatar',async()=>{const c=createMessageLogContext({waitMs:10});c.remember(message());const d=await c.deleted({guild,id:'m',channelId:'c'});assert.equal(d.author,'u');assert.equal(d.content,'Original message');assert.ok(d.avatar_url);assert.match(d.deleted_by,/Unconfirmed/);});
+test('fresh matching audit entry resolves moderator, stale or wrong-target entries do not',async()=>{const c=createMessageLogContext({waitMs:10});const result=c.deleted(message());c.audit(entry(),guild);assert.equal((await result).deleted_by,'mod');const stale=createMessageLogContext({waitMs:10});stale.audit(entry({createdTimestamp:Date.now()-20000}),guild);stale.audit(entry({targetId:'other'}),guild);assert.match((await stale.deleted(message())).deleted_by,/Unconfirmed/);});
+test('concurrent deletes for the same author/channel never reuse or guess an executor',async()=>{const c=createMessageLogContext({waitMs:10});const a=c.deleted(message('a')),b=c.deleted(message('b'));c.audit(entry(),guild);for(const d of await Promise.all([a,b]))assert.match(d.deleted_by,/Unconfirmed/);});
+test('uncached delete explicitly reports missing author and content',async()=>{const c=createMessageLogContext({waitMs:1});const d=await c.deleted({guild,id:'old',channelId:'c'});assert.match(d.author,/Unavailable/);assert.match(d.content,/Unavailable/);});
+test('long deleted message remains readable within Discord embed field limits',()=>{const e=buildLogEmbed({},'message_deleted',{author:'123456789012345678',content:'a'.repeat(4000),deleted_by:'123456789012345679',avatar_url:'https://cdn.discordapp.com/a.png'});assert.equal(e.fields.filter(f=>f.name.startsWith('Message')).map(f=>f.value.slice(4,-4)).join('').length,4000);assert.ok(e.fields.every(f=>f.value.length<=1024));assert.equal(e.thumbnail.url,'https://cdn.discordapp.com/a.png');assert.ok(e.fields.some(f=>f.name==='Deleted by'&&f.value==='<@123456789012345679>'));});
