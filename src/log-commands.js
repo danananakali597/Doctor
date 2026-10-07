@@ -1,4 +1,5 @@
 import {PermissionFlagsBits as P,Events} from 'discord.js';
+import {logsCommand} from './log-command-spec.js';
 import {settings,events} from './db.js';
 import {logEvents,logById,validateLogs} from './log-catalog.js';
 import {buildLogEmbed} from './log-design.js';
@@ -42,6 +43,7 @@ export async function logCommand(i){
  return i.editReply({embeds:[{title:'VEX • Activity logs',description:`${active.length}/${logEvents.length} events enabled.\nConfigure by category or exact event name.`,fields:groups.map(group=>({name:group,value:logEvents.filter(e=>e.group===group).map(e=>`${config[e.id]?.enabled?'✅':'○'} ${e.id}${config[e.id]?.enabled?' → <#'+config[e.id].channelId+'>':''}`).join('\n').slice(0,1024),inline:false})),color:0x8270f5}],allowedMentions:{parse:[]}});
 }
 export function attachLogCommands(client){
+ client.once(Events.ClientReady,()=>{const timer=setTimeout(async()=>{try{const registered=await client.application.commands.fetch();if(!registered.some(c=>c.name==='logs'))await client.application.commands.create(logsCommand);console.log('VEX_LOG_COMMAND_READY');}catch(e){console.warn('VEX_LOG_COMMAND_REGISTRATION_FAILED',e.code||e.name);}},7500);timer.unref();});
  for(const listener of client.listeners(Events.InteractionCreate)){client.removeListener(Events.InteractionCreate,listener);client.on(Events.InteractionCreate,function(i){if(!owns(i))return listener.call(this,i);});}
  client.on(Events.InteractionCreate,i=>{if(owns(i))void logCommand(i).catch(async e=>{console.warn('Log command:',e.code||e.name);if(i.deferred)await i.editReply('The request could not be completed. Check the destination permissions and try again.').catch(()=>{});});});
 }
