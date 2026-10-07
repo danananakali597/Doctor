@@ -17,6 +17,7 @@ import {scan,backup,restore,restoreConfiguration,lockdown} from './operations.js
 import {WindowCounter} from './rules.js';
 import {commands} from './commands.js';
 import {validateCommandRules} from './command-policy.js';
+import {attachGiftRoutes} from './gift-routes.js';
 export const app=express();app.disable('x-powered-by');app.set('trust proxy',1);app.use(express.json({limit:'128kb'}));
 const attempts=new WindowCounter(),states=new Map(),secure=env.publicUrl.startsWith('https://'),nonce=()=>crypto.randomBytes(32).toString('hex');
 const hash=x=>crypto.createHash('sha256').update(x).digest('hex');
@@ -84,6 +85,7 @@ app.post('/api/guilds/:id/trial',auth,csrf,guildAuth,async(req,res)=>{if(req.ses
 app.put('/api/guilds/:id/preferences',auth,csrf,guildAuth,(req,res)=>res.json({preferences:savePreferences(req.guild.id,req.member.id,req.body)}));
 app.put('/api/guilds/:id/dashboard-access',auth,csrf,guildAuth,owner,async(req,res)=>{const policy=validateAccess(req.body);for(const id of Object.keys(policy)){if(id===req.guild.ownerId)throw Error('Owner always retains full access');const m=await req.guild.members.fetch({user:id,force:true});if(!m.permissions.has(P.Administrator))throw Error('Choose an existing Discord administrator');}setState(req.guild.id,'dashboard_access',policy);await record(req.guild,'control_panel_action',{actor:req.member.id,modules:'dashboard access',result:'Updated'},true);res.json({ok:true});});
 app.get('/health',(_req,res)=>res.status(client.isReady()?200:503).json({ok:client.isReady(),version:'3.4.0'}));
+attachGiftRoutes(app,{auth,csrf,guildAuth});
 app.use(express.static(path.join(path.dirname(fileURLToPath(import.meta.url)),'../public')));
 app.use((err,_req,res,_next)=>{console.error('Web error:',err.message);res.status(400).json({error:err.message||'Request failed'});});
 export function startWeb(){return app.listen(env.port,()=>console.log('VEX dashboard: '+env.publicUrl));}

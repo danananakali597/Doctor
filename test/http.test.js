@@ -17,6 +17,25 @@ test('administrator can save permitted Basic settings',async()=>{assert.equal((a
 test('administrator cannot add trusted users without ownership',async()=>{grant(id,'plus',Date.now()+60000);assert.equal((await put({trustedUsers:['123456789012345679']})).status,400);});
 test('guild lookup cannot access another server',async()=>{const r=await fetch(base+'/api/guilds/223456789012345678',{headers});assert.equal(r.status,403);});
 test('non-operator cannot mint a trial',async()=>{const r=await fetch(base+'/api/guilds/'+id+'/trial',{method:'POST',headers,body:JSON.stringify({plan:'ultimate'})});assert.equal(r.status,403);});
+test('gift creation and metadata stay private to the application owner; redemption requires guild ownership',async()=>{
+ client.application={owner:{id:'app-owner'}};
+ grant(id,'basic',Date.now());
+ const request=(url,method='GET',body,custom=headers)=>fetch(base+url,{method,headers:custom,...(body?{body:JSON.stringify(body)}:{})});
+ assert.equal((await request('/api/operator/gift-keys')).status,403);
+ assert.equal((await request('/api/operator/gift-keys','POST',{plan:'plus'})).status,403);
+ assert.equal((await request('/api/operator/gift-keys/fake/revoke','POST',{})).status,403);
+ const operatorSid='operator-session';setSession(crypto.createHash('sha256').update(operatorSid).digest('hex'),{user:{id:'app-owner'},csrf,guilds:[]},Date.now()+60000);
+ const operatorHeaders={...headers,cookie:'sid='+operatorSid};
+ assert.equal((await request('/api/operator/gift-keys','POST',{plan:'plus'},{...operatorHeaders,origin:'https://evil.example'})).status,403);
+ const created=await request('/api/operator/gift-keys','POST',{plan:'ultimate'},operatorHeaders);assert.equal(created.status,201);const key=await created.json();
+ const listing=await (await request('/api/operator/gift-keys','GET',null,operatorHeaders)).json();assert.equal(JSON.stringify(listing).includes(key.key),false);
+ assert.equal((await request('/api/guilds/'+id+'/redeem-key','POST',{key:key.key})).status,403);
+ const ownerSid='guild-owner-session';setSession(crypto.createHash('sha256').update(ownerSid).digest('hex'),{user:{id:'owner'},csrf,guilds:[]},Date.now()+60000);
+ const ownerHeaders={...headers,cookie:'sid='+ownerSid};member.id='owner';
+ try{const redeemed=await request('/api/guilds/'+id+'/redeem-key','POST',{key:key.key},ownerHeaders);assert.equal(redeemed.status,200);assert.equal((await redeemed.json()).plan,'ultimate');
+ assert.equal((await request('/api/guilds/'+id+'/redeem-key','POST',{key:key.key},ownerHeaders)).status,400);
+ }finally{member.id='user';grant(id,'basic',Date.now());}
+});
 test('removed cinema and watch routes stay unavailable',async()=>{
  for(const url of ['/api/cinema/'+id,'/cinema/'+id,'/watch','/api/watch/example','/activity/','/activity/api/room']){const r=await fetch(base+url,{headers});assert.equal(r.status,404,url);}
 });

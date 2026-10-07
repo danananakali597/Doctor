@@ -1,6 +1,6 @@
 # VEX Command Core 4.0
 
-Adds a private `/vex` control center, reviewed moderation and lockdown actions, organized module navigation and an actual command directory. The 96 automated tests and syntax checks pass. See [COMMAND_CORE.md](COMMAND_CORE.md) for behavior, hosting compatibility and validation limits.
+Adds a private `/vex` control center, reviewed moderation and lockdown actions, organized module navigation and an actual command directory. Automated tests and syntax checks pass. See [COMMAND_CORE.md](COMMAND_CORE.md) for behavior, hosting compatibility and validation limits.
 
 # VEX Community OS 3.0
 
@@ -30,9 +30,13 @@ Basic: message spam/links/invites/mentions/words/caps and length filters, logs, 
 Plus: join-burst detection, manual verification, account-age checks, timed quarantine, anti-bot, domain/URL heuristics, voice hopping protection, audit logs, trust lists.
 Ultimate: audit-based Anti-Nuke, mass ban/kick detection, channel/role/webhook monitoring, permission escalation response, protected resources, lockdown, scanner/score, reports/timeline, structure backup/restore, tamper/owner alerts, repeated-incident rules.
 
-Displayed $5/$10 monthly per-server prices are proposals. Billing is NOT connected. Basic is the default. Only the Discord application owner can grant seven-day test access in Plans. Entitlements and expiry are enforced server-side for API writes and events.
+Basic is free; Plus is $7 per server per month; Ultimate is $14 per server per month. Automatic checkout and recurring charges are not connected yet, so these prices do not currently accept payment or unlock paid access. After a confirmed monthly payment is connected, the entitlement expiry returns the server to Basic automatically; paid modules, commands and dashboard actions that check entitlements then stop working. Only the Discord application owner can grant seven-day test access in Plans. Entitlements and expiry are enforced server-side for API writes, events and paid operations.
 
 ## Setup
+
+### Private one-month gift keys
+
+In **Plans & access**, only the Discord application owner sees **Private gift keys** and can create Plus/Ultimate keys, inspect redemption metadata or revoke unused keys. The API checks application ownership independently of the dashboard. Full keys are shown once on creation; only SHA-256 hashes are stored. Keys are single-use, and activation by a server owner grants one calendar month from activation. Same-plan redemption extends current access by a month; a different active plan must expire first. Redemption and entitlement updates are atomic. At expiry, existing entitlement checks revert to Basic. These are free gifts and do not require payment checkout. Store SQLite on the persistent Railway volume so keys and redemptions survive redeployment.
 
 Node 24, `npm ci`, configure `.env.example`, `npm start`. Enable Server Members and Message Content intents. OAuth redirect is `PUBLIC_URL/auth/callback`. Use HTTPS outside localhost.
 

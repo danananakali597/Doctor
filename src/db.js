@@ -5,6 +5,8 @@ import path from 'node:path';
 import Database from 'better-sqlite3';
 import {env} from './config.js';
 import {defaults} from './catalog.js';
+import {nextMonthlyPeriodEnd} from './billing-period.js';
+export {nextMonthlyPeriodEnd};
 fs.mkdirSync(env.dataDir,{recursive:true,mode:0o700});
 export const db=new Database(path.join(env.dataDir,'vex.sqlite'));
 db.pragma('journal_mode = WAL');
@@ -18,6 +20,11 @@ export function settings(g){const base=defaults(),r=db.prepare('SELECT json FROM
 export function saveSettings(g,p){const old=settings(g),s={...old,...p,community:mergeCommunity(old.community,p.community),activityLogs:mergeLogs(old.activityLogs,p.activityLogs),commandRules:{...old.commandRules},modules:{...old.modules}};for(const[k,v]of Object.entries(p.modules||{}))s.modules[k]={...s.modules[k],...v};for(const[k,v]of Object.entries(p.commandRules||{}))s.commandRules[k]={...s.commandRules[k],...v};db.prepare('INSERT INTO config VALUES (?,?) ON CONFLICT(guild) DO UPDATE SET json=excluded.json').run(g,JSON.stringify(s));return s;}
 export function plan(g){const r=db.prepare('SELECT * FROM entitlements WHERE guild=?').get(g);return r&&r.expires>Date.now()?r.plan:'basic';}
 export function grant(g,p,expires){if(!['basic','plus','ultimate'].includes(p)||!Number.isSafeInteger(expires))throw Error('Invalid grant');db.prepare('INSERT INTO entitlements VALUES (?,?,?) ON CONFLICT(guild) DO UPDATE SET plan=excluded.plan,expires=excluded.expires').run(g,p,expires);}
+// Call only after a payment provider has confirmed a successful monthly charge.
+export function grantMonthly(g,p,paidAt=Date.now()){
+ if(!['plus','ultimate'].includes(p))throw Error('Only paid plans have monthly billing');
+ const expires=nextMonthlyPeriodEnd(paidAt);grant(g,p,expires);return expires;
+}
 export function event(g,kind,detail){db.prepare('INSERT INTO incidents(guild,kind,json,at) VALUES(?,?,?,?)').run(g,kind,JSON.stringify(detail),Date.now());db.prepare('DELETE FROM incidents WHERE guild=? AND id NOT IN (SELECT id FROM incidents WHERE guild=? ORDER BY id DESC LIMIT 1000)').run(g,g);}
 export function events(g,limit=100){return db.prepare('SELECT * FROM incidents WHERE guild=? ORDER BY id DESC LIMIT ?').all(g,Math.min(1000,limit)).map(x=>({id:x.id,kind:x.kind,detail:JSON.parse(x.json),at:x.at}));}
 export function getState(g,k,fallback=null){const r=db.prepare('SELECT json FROM state WHERE guild=? AND key=?').get(g,k);return r?JSON.parse(r.json):fallback;}

@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
 process.env.DATA_DIR=fs.mkdtempSync(path.join(os.tmpdir(),'vex-test-'));
-const {settings,saveSettings,plan,grant,event,events,getState,setState,db}=await import('../src/db.js');
+const {settings,saveSettings,plan,grant,grantMonthly,nextMonthlyPeriodEnd,event,events,getState,setState,db}=await import('../src/db.js');
 const {defaults,validatePatch,modules,entitled}=await import('../src/catalog.js');
 const {messageReasons,WindowCounter,domainMatches}=await import('../src/rules.js');
 const {permissionEscalation}=await import('../src/security.js');
@@ -11,6 +11,8 @@ test('server rejects forged premium modules and unknown keys',()=>{assert.throws
 test('trust cannot be edited by a non-owner or lower plan',()=>{assert.throws(()=>validatePatch({trustedUsers:['123456789012345678']},'plus',false));assert.throws(()=>validatePatch({trustedUsers:[]},'basic',true));assert.deepEqual(validatePatch({trustedUsers:[]},'plus',true),{trustedUsers:[]});});
 test('settings and incident data are isolated per guild',()=>{saveSettings('a',{modules:{spam:{enabled:true}}});assert.equal(settings('a').modules.spam.enabled,true);assert.equal(settings('b').modules.spam.enabled,false);event('a','spam',{actor:'u'});assert.equal(events('a').length,1);assert.equal(events('b').length,0);});
 test('expired entitlements revert to Basic',()=>{grant('a','ultimate',Date.now()+50000);assert.equal(plan('a'),'ultimate');grant('a','plus',1);assert.equal(plan('a'),'basic');});
+test('monthly paid access expires one calendar month after successful payment',()=>{const paidAt=Date.UTC(2026,9,7,12);const expires=grantMonthly('monthly','plus',paidAt);assert.equal(expires,Date.UTC(2026,10,7,12));assert.equal(plan('monthly'),'plus');assert.doesNotThrow(()=>validatePatch({modules:{raid:{enabled:true}}},plan('monthly'),true));grant('monthly','plus',Date.now()-1);assert.equal(plan('monthly'),'basic');assert.throws(()=>validatePatch({modules:{raid:{enabled:true}}},plan('monthly'),true),/Plan does not include/);});
+test('monthly billing clamps month-end dates and only accepts paid tiers',()=>{assert.equal(nextMonthlyPeriodEnd(Date.UTC(2025,0,31,9)),Date.UTC(2025,1,28,9));assert.equal(nextMonthlyPeriodEnd(Date.UTC(2024,0,31,9)),Date.UTC(2024,1,29,9));assert.throws(()=>grantMonthly('monthly','basic',Date.now()),/Only paid plans/);});
 test('subdomain allowlist does not trust suffix impersonators',()=>{assert.equal(domainMatches('a.example.com','example.com'),true);assert.equal(domainMatches('example.com.evil.test','example.com'),false);assert.equal(domainMatches('notexample.com','example.com'),false);});
 test('spam detects duplicates and expires its window',()=>{const c=new WindowCounter();assert.deepEqual(reason('hello',['spam'],{},c,10000),[]);reason('hello',['spam'],{},c,10001);assert.deepEqual(reason('hello',['spam'],{},c,10002),['spam']);assert.deepEqual(reason('hello',['spam'],{},c,30000),[]);});
 test('message counters do not cross guild boundaries',()=>{const c=new WindowCounter(),d=defaults().modules.spam;for(let i=0;i<3;i++)messageReasons({guildId:'a',userId:'u',content:'x'},id=>id==='spam'?d:null,c,1000);assert.deepEqual(messageReasons({guildId:'b',userId:'u',content:'x'},id=>id==='spam'?d:null,c,1000),[]);});
