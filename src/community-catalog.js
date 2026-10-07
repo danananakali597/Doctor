@@ -48,6 +48,3 @@ function check(f,v){
 }
 function validateFields(fields,p,full=false){if(!p||typeof p!=='object'||Array.isArray(p))throw Error('Invalid module settings');const out={};for(const [k,v]of Object.entries(p)){const f=fields.find(f=>f.key===k);if(!f)throw Error('Unknown field');out[k]=check(f,v);}if(full)for(const f of fields)if(!(f.key in out))out[f.key]=structuredClone(f.value);return out;}
 export function validateCommunity(p){if(!p||typeof p!=='object'||Array.isArray(p))throw Error('Invalid community settings');const out={};for(const [id,values]of Object.entries(p)){if(!Object.hasOwn(communityById,id))throw Error('Unknown community module');out[id]=validateFields(communityById[id].fields,values);}return out;}
-
-// VEX_JOURNEY_FIELDS
-communityById.welcome.fields.push({key:'journeyEnabled',label:'Enable welcome journey',type:'boolean',value:true},{key:'sayHiEnabled',label:'Ask members to introduce themselves',type:'boolean',value:false},{key:'chatChannelId',label:'Introduction channel',type:'channel',value:'',types:[0,5]},{key:'rulesChannelId',label:'Rules channel',type:'channel',value:'',types:[0,5]});
