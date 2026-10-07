@@ -38,3 +38,13 @@ test('message edits display both versions with the reference field layout',async
  assert.equal(sent.at(-1).embeds[0].fields.find(f=>f.name==='Message').value,'```\nafter text\n```');
 });
 test.after(()=>{db.close();fs.rmSync(process.env.DATA_DIR,{recursive:true,force:true});});
+test('gateway audit attribution requires exact target, freshness and an unambiguous match',async()=>{
+ const {matchingAuditActor}=await import('../src/logs.js');
+ const now=Date.now(),entry={targetId:'member',executorId:'mod',id:'audit',createdTimestamp:now,changes:[{key:'nick'}]};let entries=[entry];
+ const g={members:{me:{permissions:{has:()=>true}}},fetchAuditLogs:async()=>({entries:new Collection(entries.map((e,n)=>[n,e]))})};
+ assert.equal((await matchingAuditActor(g,'nickname_changed',{member:'member'},now)).actor,'mod');
+ assert.deepEqual(await matchingAuditActor(g,'nickname_changed',{member:'other'},now),{});
+ entries=[{...entry,createdTimestamp:now-11000}];assert.deepEqual(await matchingAuditActor(g,'nickname_changed',{member:'member'},now),{});
+ entries=[entry,{...entry,id:'other'}];assert.deepEqual(await matchingAuditActor(g,'nickname_changed',{member:'member'},now),{});
+ entries=[{...entry,changes:[{key:'mute'}]}];assert.deepEqual(await matchingAuditActor(g,'nickname_changed',{member:'member'},now),{});
+});

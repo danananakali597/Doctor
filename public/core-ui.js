@@ -1,6 +1,6 @@
 // Shared directory rules: every command has one settings destination.
 export const commandModule=name=>({
- vex:'commands',help:'commands',commands:'commands',security:'protection',scan:'insights',lockdown:'response',verify:'module:verification',
+ logs:'serverlogs',vex:'commands',help:'commands',commands:'commands',security:'protection',scan:'insights',lockdown:'response',verify:'module:verification',
  welcome:'community:welcome',rank:'community:levels',leaderboard:'community:levels',top:'community:levels',setxp:'community:levels',setlevel:'community:levels',resetxp:'community:levels',
  roles:'community:selfroles',colors:'community:selfroles',color:'community:selfroles',invite:'community:templinks',starboard:'community:starboard',ticket:'community:tickets',
  room:'community:tempvoice',moveme:'community:tempvoice',move:'community:tempvoice',vkick:'community:tempvoice',ask:'ai-chat','ai-security':'ai-security',

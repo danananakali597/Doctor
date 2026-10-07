@@ -15,8 +15,10 @@ test('fresh Discord permissions are checked for every request',async()=>{permiss
 test('forged premium settings rejected even for administrator',async()=>{const r=await put({modules:{nuke:{enabled:true}}});assert.equal(r.status,400);assert.equal(settings(id).modules.nuke.enabled,false);});
 test('administrator can save permitted Basic settings',async()=>{assert.equal((await put({modules:{spam:{enabled:true,action:'log'}}})).status,200);assert.equal(settings(id).modules.spam.enabled,true);});
 test('administrator cannot add trusted users without ownership',async()=>{grant(id,'plus',Date.now()+60000);assert.equal((await put({trustedUsers:['123456789012345679']})).status,400);});
+test('only server owner can configure welcome routing',async()=>{assert.equal((await put({community:{welcome:{sayHiEnabled:true,chatChannelId:'123456789012345678'}}})).status,403);});
+test('invite requests Administrator',async()=>{const r=await fetch(base+'/api/public');assert.equal(new URL((await r.json()).invite).searchParams.get('permissions'),'8');});
 test('guild lookup cannot access another server',async()=>{const r=await fetch(base+'/api/guilds/223456789012345678',{headers});assert.equal(r.status,403);});
-test('non-operator cannot mint a trial',async()=>{const r=await fetch(base+'/api/guilds/'+id+'/trial',{method:'POST',headers,body:JSON.stringify({plan:'ultimate'})});assert.equal(r.status,403);});
+test('removed trial endpoint cannot mint entitlements',async()=>{const r=await fetch(base+'/api/guilds/'+id+'/trial',{method:'POST',headers,body:JSON.stringify({plan:'ultimate'})});assert.equal(r.status,404);});
 test('gift creation and metadata stay private to the application owner; redemption requires guild ownership',async()=>{
  client.application={owner:{id:'app-owner'}};
  grant(id,'basic',Date.now());

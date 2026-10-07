@@ -31,3 +31,9 @@ test('reference embeds keep deleted fields stacked and ban fields paired with th
  assert.deepEqual(banned.fields.map(f=>[f.name,f.inline]),[['Member',true],['Moderator',true],['Reason',false]]);
  assert.equal(banned.color,0xe74c3c);assert.equal(banned.thumbnail.url,'https://cdn.discordapp.com/target.png');assert.equal(banned.footer.text,'VEX • Moderation');
 });
+test('small actor portrait and name are separate from subject and unknown actors stay explicit',()=>{
+ const guild={members:{cache:new Map()},client:{users:{cache:new Map([['123456789012345678',{username:'Moderator',displayAvatarURL:()=> 'https://cdn.discordapp.com/embed/avatars/0.png'}]])}}};
+ const card=buildLogEmbed(guild,'member_banned',{actor:'123456789012345678',target:'223456789012345678'});
+ assert.equal(card.author.name,'Moderator');assert.ok(card.author.icon_url);assert.ok(card.description.includes('Moderator'));
+ assert.ok(buildLogEmbed(guild,'role_updated',{target:'223456789012345678'}).description.includes('Actor not confirmed'));
+});

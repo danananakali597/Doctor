@@ -1,3 +1,4 @@
+import {logsCommand} from './log-command-spec.js';
 import {vexCommand} from './command-spec.js';
 import {communityCommands} from './community-commands.js';
 import {SlashCommandBuilder,PermissionFlagsBits as P} from 'discord.js';
@@ -7,3 +8,5 @@ export const commands=[new SlashCommandBuilder().setName('help').setDescription(
 if(!commands.some(c=>c.name==='vex'))commands.push(vexCommand);
 
 for(const c of commands){c.contexts=[0];c.dm_permission=false;}
+
+if(!commands.some(c=>c.name==='logs'))commands.push(logsCommand);

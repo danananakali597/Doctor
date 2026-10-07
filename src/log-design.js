@@ -48,7 +48,7 @@ export function buildLogEmbed(guild,id,details={},options={}){
   add('actor','Moderator',details.actor??'Unavailable',true);
   add('reason','Reason',details.reason||'No reason provided.');
  }else{
-  for(const [key,value] of Object.entries(details).filter(([key,value])=>!['avatar_url','thumbnail_url'].includes(key)&&value!==null&&value!==undefined).slice(0,20)){
+  for(const [key,value] of Object.entries(details).filter(([key,value])=>!['avatar_url','thumbnail_url','actor_avatar_url','actor_name','member_name'].includes(key)&&value!==null&&value!==undefined).slice(0,20)){
    add(key,labels[key]||titleCase(key),value,!['content','attachments','deleted_by','before','after','message_content','before_content','after_content','deletion_audit_actor','note','reason','changed','rules','result'].includes(key)&&String(value).length<80);
   }
  }
@@ -57,6 +57,13 @@ export function buildLogEmbed(guild,id,details={},options={}){
  const userId=id==='member_banned'?details.target??details.member:details.author||details.member||details.actor;
  const user=guild.members?.cache?.get(userId)?.user||guild.client?.users?.cache?.get(userId);
  const avatar=details.avatar_url||user?.displayAvatarURL?.({size:128});
+ const actorId=[details.actor,details.deleted_by,details.edited_by,details.author,details.member].find(v=>/^\d{17,22}$/.test(v||''));
+ const actor=guild.members?.cache?.get(actorId)?.user||guild.client?.users?.cache?.get(actorId);
+ const actorName=details.actor_name||actor?.globalName||actor?.username||(details.member_name&&actorId===details.member?details.member_name:null);
+ const actorAvatar=details.actor_avatar_url||actor?.displayAvatarURL?.({size:64})||(actorId===userId?avatar:null);
+ const secureAvatar=u=>typeof u==='string'&&u.startsWith('https://');
+ const author=actorName?{name:String(actorName).slice(0,120),...(secureAvatar(actorAvatar)?{icon_url:actorAvatar}:{})}:null;
+ const description=id==='message_deleted'?`A message was deleted. See Author and Deleted by below.`:actorName?`${String(actorName).replace(/[\\*_~`|]/g,'').slice(0,120)} • ${titleCase(options.title||id)}`:`${titleCase(options.title||id)} • Actor not confirmed`;
  const group=id.startsWith('message_')||id==='messages_bulk_deleted'?'Message Logs':id==='member_banned'?'Moderation':`${titleCase(options.group||'security')} Logs`;
- return {title:`${icon} ${titleCase(options.title||id)}`,color:parseInt(logPalette[severity].slice(1),16),fields:boundedFields,timestamp:new Date().toISOString(),footer:{text:`VEX • ${group}${details.incident?` • Incident ${String(details.incident).slice(0,80)}`:''}`},...(avatar?{thumbnail:{url:avatar}}:{})};
+ return {description,...(author?{author}:{}),title:`${icon} ${titleCase(options.title||id)}`,color:parseInt(logPalette[severity].slice(1),16),fields:boundedFields,timestamp:new Date().toISOString(),footer:{text:`VEX • ${group}${details.incident?` • Incident ${String(details.incident).slice(0,80)}`:''}`},...(secureAvatar(avatar)?{thumbnail:{url:avatar}}:{})};
 }
