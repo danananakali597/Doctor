@@ -12,7 +12,7 @@ const separator=()=>({type:14,divider:true,spacing:1});
 const names={deck:'CONTROL DECK',guide:'GETTING STARTED',atlas:'COMMAND ATLAS',coverage:'PROTECTION COVERAGE',identity:'MEMBER CHECK',diagnostics:'DIAGNOSTIC FINDINGS',emergency:'EMERGENCY OPERATIONS',milestone:'XP MILESTONE',podium:'COMMUNITY PODIUM',spotlight:'TOP TEN SPOTLIGHT',collection:'YOUR ROLE COLLECTION',palette:'AVAILABLE COLOR PALETTE',signature:'COLOR SIGNATURE',pass:'INVITATION PASS',constellation:'COMMUNITY HIGHLIGHTS',arrival:'ARRIVAL EXPERIENCE',support:'SUPPORT REQUEST',suite:'PERSONAL VOICE SUITE',route:'YOUR VOICE ROUTE',transfer:'VOICE TRANSFER',disconnect:'VOICE DISCONNECT',workspace:'MODERATION WORKSPACE',archive:'CASE ARCHIVE',ledger:'ACTIVE WARNING LEDGER',retraction:'WARNING RETRACTION',advisory:'MEMBER ADVISORY',restriction:'COMMUNICATION RESTRICTION',restoration:'COMMUNICATION RESTORATION',exit:'SERVER EXIT',block:'SERVER ACCESS BLOCK',return:'SERVER ACCESS RESTORATION',cleanup:'MESSAGE CLEANUP',tempo:'CONVERSATION TEMPO',pause:'CHANNEL PAUSE',resume:'CHANNEL RESUME','identity-edit':'MEMBER IDENTITY',assignment:'ROLE ASSIGNMENT','xp-adjustment':'XP TOTAL ADJUSTMENT',calibration:'LEVEL CALIBRATION',reset:'XP RESET',cinema:'CINEMA LAUNCHPAD',conversation:'AI RESPONSE',intelligence:'SECURITY INTELLIGENCE',stream:'ACTIVITY EVENT STREAM'};
 const sourceInMessage=m=>{
  const all=[];const walk=cs=>{for(const c of cs||[]){const j=json(c);if(j.content)all.push(j.content);walk(j.components);}};walk(m?.components);
- return all.join('\n').match(/VEX · \/([\w-]+) ·/u)?.[1];
+ const combined=all.join('\n');return combined.match(/VEX · \/([\w-]+) ·/u)?.[1]||(combined.includes('VEX · Cinema Activity ·')?'launch':null);
 };
 export function commandForInteraction(i){
  if(profileFor(i.vexCommandName||i.commandName))return i.vexCommandName||i.commandName;
@@ -78,11 +78,12 @@ export function presentCommand(payload,name,{interaction={},privateResponse=true
   if(media.length)children.push({type:12,items:media.slice(0,10)});
   for(const fileName of existingNames)if(!media.some(m=>m.media.url===`attachment://${fileName}`))children.push({type:13,file:{url:`attachment://${fileName}`}});
  }
- children.push(separator(),text(`-# VEX · /${name} · ${p.icon} ${names[p.layout]}${notes.length?'\n'+notes.map(n=>escapeMarkdown(n)).join(' · ').slice(0,220):''}`));
+ const commandLabel=name==='launch'?'Cinema Activity':'/'+name;
+ children.push(separator(),text(`-# VEX · ${commandLabel} · ${p.icon} ${names[p.layout]}${notes.length?'\n'+notes.map(n=>escapeMarkdown(n)).join(' · ').slice(0,220):''}`));
  if(interaction.user?.id&&interaction.guildId&&!['help','commands'].includes(name)){
   const locale=['en','ckb','ar','tr'].includes(interaction.vexLocale)?interaction.vexLocale:'en';
   const id=(verb,arg)=>`vex:atlas:${interaction.user.id}:${interaction.guildId}:${locale}:${verb}:${arg}`;
-  const nav={type:1,components:[{type:2,style:2,label:locale==='ckb'?'ڕێبەری /'+name:'Guide /'+name,custom_id:id('open',name)},{type:2,style:2,label:locale==='ckb'?'کۆماندەکان':'Command Atlas',custom_id:id('category','all')},{type:2,style:5,label:locale==='ckb'?'ڕێکخستنەکان':'Settings',url:env.publicUrl+'/?guild='+interaction.guildId+'&section='+encodeURIComponent(p.section)}]};
+  const nav={type:1,components:[{type:2,style:2,label:locale==='ckb'?'ڕێبەری '+commandLabel:'Guide '+commandLabel,custom_id:id('open',name)},{type:2,style:2,label:locale==='ckb'?'کۆماندەکان':'Command Atlas',custom_id:id('category','all')},{type:2,style:5,label:locale==='ckb'?'ڕێکخستنەکان':'Settings',url:env.publicUrl+'/?guild='+interaction.guildId+'&section='+encodeURIComponent(p.section)}]};
   if(componentCount(children)+componentCount(rows)+componentCount([nav])+1<=40)rows.push(nav);
  }
  const out={...payload,components:[{type:17,accent_color:p.color,components:children},...rows],allowedMentions:payload.allowedMentions||{parse:[]},flags:bits(payload.flags)|V2};

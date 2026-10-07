@@ -15,7 +15,7 @@ const apiOption=o=>({...o,min_value:o.min_value??o.minValue,max_value:o.max_valu
 export function liveCatalogue(client){
  const cached=client?.application?.commands?.cache;
  const live=(cached?.size?[...cached.values()]:commands).map(c=>({name:c.name,id:c.id,type:c.type,description:c.description,options:c.options?.map(apiOption),default_member_permissions:c.default_member_permissions??c.defaultMemberPermissions?.bitfield?.toString()??null}));
- return live.filter(c=>c.type===undefined||c.type===1).filter(c=>profileFor(c.name)).sort((a,b)=>a.name.localeCompare(b.name));
+ return live.filter(c=>c.type===undefined||c.type===1||c.type===4).filter(c=>profileFor(c.name)).sort((a,b)=>a.name.localeCompare(b.name));
 }
 export function cataloguePage(catalogue,group='all',page=0,query=''){
  const needle=query.toLocaleLowerCase().trim();const list=catalogue.filter(c=>(group==='all'||profileFor(c.name)?.group===group)&&(!needle||[c.name,c.description,profileFor(c.name)?.label,profileFor(c.name)?.ckb,profileFor(c.name)?.group].join(' ').toLocaleLowerCase().includes(needle)));
@@ -28,10 +28,10 @@ export function atlasPage(i,{locale='en',group='all',page=0,query=''}={}){
  const catalogue=liveCatalogue(i.client),view=cataloguePage(catalogue,group,page,query);
  const category=new Row().addComponents(new Select().setCustomId(atlasId(i,locale,'category')).setPlaceholder(word(locale,1)).addOptions([{label:word(locale,0),value:'all',default:group==='all'},...commandGroups.map((g,n)=>({label:groups[locale][n],value:g,default:g===group}))]));
  const rows=[category];
- if(view.items.length)rows.push(new Row().addComponents(new Select().setCustomId(atlasId(i,locale,'open')).setPlaceholder(word(locale,2)).addOptions(view.items.map(c=>({label:'/'+c.name,value:c.name,description:(locale==='ckb'?profileFor(c.name).ckb:c.description||profileFor(c.name).label).slice(0,100)})))));
+ if(view.items.length)rows.push(new Row().addComponents(new Select().setCustomId(atlasId(i,locale,'open')).setPlaceholder(word(locale,2)).addOptions(view.items.map(c=>({label:c.type===4?c.name+' · Activity':'/'+c.name,value:c.name,description:(locale==='ckb'?profileFor(c.name).ckb:c.description||profileFor(c.name).label).slice(0,100)})))));
  rows.push(languageRow(i,locale),new Row().addComponents(button(i,locale,'search',word(locale,3)),button(i,locale,'page',word(locale,4),group+','+(view.page-1),view.page===0||!!query),button(i,locale,'page',word(locale,5),group+','+(view.page+1),view.page===view.pages-1||!!query),dashboard(i,locale)));
- const list=view.items.map(c=>`${profileFor(c.name).icon} **/${c.name}** — ${safe(locale==='ckb'?profileFor(c.name).ckb:profileFor(c.name).label,80)}`).join('\n');
- const embed=new EmbedBuilder().setTitle(locale==='ckb'?'نەخشەی کۆماندەکانی VEX':'VEX Command Atlas').setDescription(`${catalogue.length} commands · ${view.page+1}/${view.pages}${query?' · '+safe(query,60):''}\n\n${list||word(locale,12)}`).setColor(0xc4b5fd).setFooter({text:'Choose a command to see its own workflow and registered inputs.'});
+ const list=view.items.map(c=>`${profileFor(c.name).icon} **${c.type===4?c.name+' · Activity':'/'+c.name}** — ${safe(locale==='ckb'?profileFor(c.name).ckb:profileFor(c.name).label,80)}`).join('\n');
+ const embed=new EmbedBuilder().setTitle(locale==='ckb'?'نەخشەی کۆماندەکانی VEX':'VEX Command Atlas').setDescription(`${catalogue.length} experiences · ${view.page+1}/${view.pages}${query?' · '+safe(query,60):''}\n\n${list||word(locale,12)}`).setColor(0xc4b5fd).setFooter({text:'Choose a command to see its own workflow and registered inputs.'});
  return {embeds:[embed],components:rows,allowedMentions:{parse:[]}};
 }
 export function inputGuide(options,locale='en'){
@@ -48,7 +48,7 @@ export function accessReason(i,actor,command){
  const required=permissionValue(command);if(required&&BigInt(required)!==0n&&!actor.permissions.has(BigInt(required)))return 'Discord permission required: '+new PermissionsBitField(BigInt(required)).toArray().join(', ');
  return null;
 }
-function registeredMention(c,sub){return c.id?`</${c.name}${sub?' '+sub:''}:${c.id}>`:'`/'+c.name+(sub?' '+sub:'')+'`';}
+function registeredMention(c,sub){if(c.type===4)return 'Open **VEX Cinema** from Discord’s **Activity launcher**. This entry point launches the full Cinema player.';return c.id?`</${c.name}${sub?' '+sub:''}:${c.id}>`:'`/'+c.name+(sub?' '+sub:'')+'`';}
 export function commandPaths(c){return (c.options||[]).filter(o=>o.type<=2).flatMap(o=>o.type===2?(o.options||[]).map(s=>({...s,name:o.name+' '+s.name})):[o]);}
 export function commandDetail(i,actor,name,locale='en',sub=''){
  const c=liveCatalogue(i.client).find(c=>c.name===name);if(!c)throw Error('This command is not registered by the running bot.');

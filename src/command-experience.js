@@ -17,10 +17,10 @@ export function attachCommandExperience(client){
  client.once('clientReady',()=>{const timer=setTimeout(async()=>{
   try{
    const registered=await client.application.commands.fetch();
-   const names=registered.filter(c=>c.type===1).map(c=>c.name),missing=names.filter(n=>!commandProfiles[n]);
+   const names=registered.filter(c=>c.type===1||c.type===4).map(c=>c.name),missing=names.filter(n=>!commandProfiles[n]);
    const cards=names.map(n=>presentCommand({embeds:[{title:'Interface audit',description:'Design validation only; no action performed.'}]},n));
    const allNative=cards.every(p=>p.components?.[0]?.type===17&&componentCount(p.components)<=40);
-   console.log('VEX_COMMAND_EXPERIENCE_AUDIT',JSON.stringify({passed:!missing.length&&allNative,count:names.length,profiles:Object.keys(commandProfiles).length,missing,allNative,names}));
+   console.log('VEX_COMMAND_EXPERIENCE_AUDIT',JSON.stringify({passed:!missing.length&&allNative,count:names.length,slashCommands:registered.filter(c=>c.type===1).size,activities:registered.filter(c=>c.type===4).size,profiles:Object.keys(commandProfiles).length,missing,allNative,names}));
    if(!missing.length&&allNative){try{console.log('VEX_COMMAND_SHOWCASE',JSON.stringify(await refreshCommandShowcase(client,registered)));}catch(e){console.warn('VEX_COMMAND_SHOWCASE_FAILED',e.code||e.name);}}
   }catch(e){console.warn('VEX_COMMAND_EXPERIENCE_AUDIT_FAILED',e.code||e.name);}
  },16000);timer.unref();});

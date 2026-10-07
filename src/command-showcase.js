@@ -4,7 +4,8 @@ const officialGuild='1557341885649920002';
 // One permanent command-navigation panel, sent by VEX in its official command channel.
 // It contains no fabricated member data, actions, subscription claims or security scores.
 export function showcasePayload(registered){
- const count=registered.filter(c=>c.type===1&&commandProfiles[c.name]).size??registered.filter(c=>c.type===1&&commandProfiles[c.name]).length;
+ const supported=registered.filter(c=>(c.type===1||c.type===4)&&commandProfiles[c.name]);
+ const count=supported.size??supported.length;
  const text=content=>({type:10,content});
  return {flags:32768,allowedMentions:{parse:[]},components:[
   {type:17,accent_color:0xa78bfa,components:[text('## ✦ VEX · Command Experience'),text(`${count} command experiences, one private workspace.\n**هەر کۆماندێک، ڕێبەر و شێوازی تایبەتی خۆی.**\nUse **/commands** or open the atlas below to browse every registered command, its inputs and its workflow.`),{type:14,divider:true,spacing:1}]},

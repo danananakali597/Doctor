@@ -9,7 +9,7 @@ const {db,saveSettings}=await import('../src/db.js');
 const {commandProfiles}=await import('../src/command-profiles.js');
 const {presentCommand,componentCount,wrapCommandInteraction,commandForInteraction}=await import('../src/command-presentation.js');
 const {commands}=await import('../src/commands.js');
-const {cataloguePage,atlasPage,commandDetail,inputGuide,atlasInteraction,commandPaths}=await import('../src/command-atlas.js');
+const {cataloguePage,atlasPage,commandDetail,inputGuide,atlasInteraction,commandPaths,liveCatalogue}=await import('../src/command-atlas.js');
 const {reviewInteraction,reviewFor,executeReview,pruneCommandReviews}=await import('../src/command-review.js');
 const {rank}=await import('../src/community-store.js');
 const {attachCommandExperience}=await import('../src/command-experience.js');
@@ -74,6 +74,10 @@ test('nested subcommands and long input choices are retained rather than truncat
 test('real Discord command models retain permissions and camel-case input bounds in guides',async()=>{
  const client=new Client({intents:[]}),native=new ApplicationCommand(client,{...catalogue.find(c=>c.name==='setlevel'),application_id:'999999999999999999'}),x=i();x.client.application.commands.cache=new Collection([[native.id,native]]);actor.permissions=new PermissionsBitField(0n);
  const detail=commandDetail(x,actor,'setlevel');assert.match(detail.embeds[0].data.fields.find(f=>f.name==='Inputs').value,/316/);assert.match(detail.embeds[0].data.fields.find(f=>f.name==='Access').value,/Administrator/);actor.permissions=new PermissionsBitField(P.Administrator);await client.destroy();
+});
+test('Cinema entry point stays in the atlas and uses the real Activity launcher instead of a fake slash command',()=>{
+ const x=i(),entry=catalogue.find(c=>c.name==='launch');x.client.application.commands.cache=new Collection(catalogue.map(c=>[c.id,c.name==='launch'?{...entry,type:4}:c]));assert.equal(liveCatalogue(x.client).length,44);
+ const detail=commandDetail(x,actor,'launch');assert.match(detail.embeds[0].data.description,/Activity launcher/);assert.ok(!detail.embeds[0].data.description.includes('</launch:'));assert.match(strings(showcasePayload(x.client.application.commands.cache).components),/44 command experiences/);
 });
 test('guild-aware settings links choose only installed, accessible dashboard servers',()=>{
  const guilds=[{id:'a',installed:true},{id:'b',installed:true},{id:'c',installed:false}];assert.equal(preferredGuild('u',guilds,'b').id,'b');assert.equal(preferredGuild('u',guilds,'c').id,'a');assert.equal(preferredGuild('u',guilds,'unavailable').id,'a');
