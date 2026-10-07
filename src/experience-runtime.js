@@ -13,6 +13,7 @@ export function integrateExperienceDashboard(s){
  if(!s.includes("from './guild-memory.js'"))s="import {rememberGuild,preferredGuild} from './guild-memory.js';\n"+s;
  s=s.replace('selected=id;patch={};','selected=id;rememberGuild(me.user.id,id);patch={};');
  s=s.replace('const guild=me.guilds.find(g=>g.installed);','const guild=preferredGuild(me.user.id,me.guilds);');
+ s=s.replace('const guild=preferredGuild(me.user.id,me.guilds);',"const guild=preferredGuild(me.user.id,me.guilds,new URLSearchParams(location.search).get('guild'));");
  if(!s.includes("commandsUI({h,raw,data,patch,mark,names:['logs']"))s=s.replace('function serverlogs(root){',"function serverlogs(root){commandsUI({h,raw,data,patch,mark,names:['logs'],title:'Log commands'})(root);");
  return s;
 }
