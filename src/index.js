@@ -21,5 +21,7 @@ attachWelcomeJourney(client);
 attachLogCommands(client);
 const {attachExperienceAudit}=await import('./experience-audit.js');
 attachExperienceAudit(client);
+const {auditSubscriptionIsolation}=await import('./subscription-diagnostics.js');
+auditSubscriptionIsolation();
 startWeb();
 startBot().catch(e=>{console.error('Bot login failed:',e);process.exit(1);});
