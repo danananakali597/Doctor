@@ -11,9 +11,10 @@ const word=(l,n)=>(copy[l]||copy.en)[n];
 const safe=(v,n=500)=>escapeMarkdown(String(v??'')).slice(0,n);
 export const atlasId=(i,l,verb,arg='')=>`vex:atlas:${i.user.id}:${i.guildId}:${l}:${verb}:${arg}`;
 const button=(i,l,verb,label,arg='',disabled=false)=>new Button().setCustomId(atlasId(i,l,verb,arg)).setLabel(label).setStyle(Style.Secondary).setDisabled(disabled);
+const apiOption=o=>({...o,min_value:o.min_value??o.minValue,max_value:o.max_value??o.maxValue,min_length:o.min_length??o.minLength,max_length:o.max_length??o.maxLength,channel_types:o.channel_types??o.channelTypes,options:o.options?.map(apiOption)});
 export function liveCatalogue(client){
  const cached=client?.application?.commands?.cache;
- const live=cached?.size?[...cached.values()].map(c=>c.toJSON?c.toJSON():c):commands;
+ const live=(cached?.size?[...cached.values()]:commands).map(c=>({name:c.name,id:c.id,type:c.type,description:c.description,options:c.options?.map(apiOption),default_member_permissions:c.default_member_permissions??c.defaultMemberPermissions?.bitfield?.toString()??null}));
  return live.filter(c=>c.type===undefined||c.type===1).filter(c=>profileFor(c.name)).sort((a,b)=>a.name.localeCompare(b.name));
 }
 export function cataloguePage(catalogue,group='all',page=0,query=''){

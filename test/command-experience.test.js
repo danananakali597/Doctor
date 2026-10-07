@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {Client,Collection,PermissionsBitField,MessageFlagsBitField,PermissionFlagsBits as P,EmbedBuilder,ActionRowBuilder,ButtonBuilder,ButtonStyle,ContainerBuilder,ModalBuilder,TextInputBuilder,TextInputStyle} from 'discord.js';
+import {Client,ApplicationCommand,Collection,PermissionsBitField,MessageFlagsBitField,PermissionFlagsBits as P,EmbedBuilder,ActionRowBuilder,ButtonBuilder,ButtonStyle,ContainerBuilder,ModalBuilder,TextInputBuilder,TextInputStyle} from 'discord.js';
 process.env.DATA_DIR=fs.mkdtempSync(path.join(os.tmpdir(),'vex-experience-'));
 const {db,saveSettings}=await import('../src/db.js');
 const {commandProfiles}=await import('../src/command-profiles.js');
@@ -70,6 +70,10 @@ test('nested subcommands and long input choices are retained rather than truncat
  const paths=commandPaths({options:[{type:2,name:'channel',options:[{type:1,name:'configure',description:'Configure a destination',options:[{type:7,name:'channel',required:true}]}]}]});assert.equal(paths[0].name,'channel configure');assert.equal(paths[0].options[0].name,'channel');
  const c=catalogue.find(c=>c.name==='logs'),old=c.options;c.options=[{type:1,name:'configure',description:'Routing',options:[{name:'event',description:'Event',type:3,choices:Array.from({length:25},(_,n)=>({name:'Choice '+n,value:'x'.repeat(80)+n}))}]}];
  const detail=commandDetail(i(),actor,'logs');const fields=detail.embeds[0].data.fields.filter(f=>f.name.startsWith('Inputs'));assert.ok(fields.length>1);assert.ok(fields.map(f=>f.value).join('').includes('x'.repeat(80)+'24'));assert.match(detail.embeds[0].data.description,/<\/logs configure:/);c.options=old;
+});
+test('real Discord command models retain permissions and camel-case input bounds in guides',async()=>{
+ const client=new Client({intents:[]}),native=new ApplicationCommand(client,{...catalogue.find(c=>c.name==='setlevel'),application_id:'999999999999999999'}),x=i();x.client.application.commands.cache=new Collection([[native.id,native]]);actor.permissions=new PermissionsBitField(0n);
+ const detail=commandDetail(x,actor,'setlevel');assert.match(detail.embeds[0].data.fields.find(f=>f.name==='Inputs').value,/316/);assert.match(detail.embeds[0].data.fields.find(f=>f.name==='Access').value,/Administrator/);actor.permissions=new PermissionsBitField(P.Administrator);await client.destroy();
 });
 test('guild-aware settings links choose only installed, accessible dashboard servers',()=>{
  const guilds=[{id:'a',installed:true},{id:'b',installed:true},{id:'c',installed:false}];assert.equal(preferredGuild('u',guilds,'b').id,'b');assert.equal(preferredGuild('u',guilds,'c').id,'a');assert.equal(preferredGuild('u',guilds,'unavailable').id,'a');
