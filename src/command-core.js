@@ -1,3 +1,4 @@
+import {localeFor} from './product-localization.js';
 import crypto from 'node:crypto';
 import {
   ActionRowBuilder as Row, ButtonBuilder as Button, ButtonStyle as Style,
@@ -30,7 +31,7 @@ export const reviewCommands=new Set(Object.keys(actionPermissions));
 export const coreCommands=new Set(['vex','help','commands','security','scan','lockdown','moderate',...reviewCommands]);
 const sessions=new Map();
 export function pruneSessions(now=Date.now()) { for(const [id,s] of sessions) if(s.expires<=now) sessions.delete(id); }
-const lang=i=>['en','ar','ckb','tr'].includes(i.options?.getString?.('language'))?i.options.getString('language'):(i.locale?.startsWith('ar')?'ar':i.locale?.startsWith('tr')?'tr':'en');
+const lang=localeFor;
 const word=(locale,n)=>(labels[locale]||labels.en)[n];
 const safe=(v,max=700)=>escapeMarkdown(String(v??'—')).slice(0,max);
 const cid=(owner,locale,verb,arg='')=>`vex:core:${owner}:${locale}:${verb}:${arg}`;

@@ -14,11 +14,12 @@ export function organizedNavigation(groups){
   output[n][1].push(item);
  }
  if(!seen.has('commands'))output[0][1].push(['commands','⌘','Command center']);
+ for(const [id,glyph,label]of [['setup','✓','Setup assistant'],['incidents','!','Incident center'],['automations','↻','Automations'],['backups','↶','Manual backups']])if(!seen.has(id))output[0][1].push([id,glyph,label]);
  return output.filter(([,items])=>items.length);
 }
 export function dashboardRoute(raw,data){
  if(typeof raw!=='string')return 'overview';
- const standard=['overview','commands','community','protection','serverlogs','monitoring','panellogs','access','response','insights','plans','inbox','history','team','appearance'];
+ const standard=['overview','commands','setup','incidents','automations','backups','community','protection','serverlogs','monitoring','panellogs','access','response','insights','plans','inbox','history','team','appearance'];
  if(standard.includes(raw))return raw;
  if(raw.startsWith('community:')&&data.communityModules.some(m=>'community:'+m.id===raw))return raw;
  if(raw.startsWith('module:')&&data.modules.some(m=>'module:'+m.id===raw))return raw;

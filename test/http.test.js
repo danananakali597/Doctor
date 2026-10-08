@@ -42,7 +42,7 @@ test('removed cinema and watch routes stay unavailable',async()=>{
  for(const url of ['/api/cinema/'+id,'/cinema/'+id,'/watch','/api/watch/example','/activity/','/activity/api/room']){const r=await fetch(base+url,{headers});assert.equal(r.status,404,url);}
 });
 test('enabled logs require an accessible same-server channel and sending permissions',async()=>{
- permission=P.ManageGuild|P.Administrator;
+ permission=P.ManageGuild|P.Administrator;grant(id,'plus',Date.now()+60000);
  const channelId='323456789012345678';const body={activityLogs:{role_created:{enabled:true,channelId,color:'#aa00ff'}}};
  assert.equal((await put(body)).status,400);
  let allowed=false;guild.members.me={id:'bot'};guild.channels.cache.set(channelId,{id:channelId,type:0,permissionsFor:()=>({has:()=>allowed})});
@@ -80,3 +80,21 @@ test('history restore rechecks ownership and current plan',async()=>{
  assert.equal((await put({restoreRevision:99999,confirm:'Test'})).status,404);member.id='user';
 });
 test.after(async()=>{await new Promise(r=>server.close(r));client.destroy();db.close();fs.rmSync(process.env.DATA_DIR,{recursive:true,force:true});});
+
+test('workspace routes enforce authentication, fresh ownership, CSRF, plan gates and guild scope',async()=>{
+ const request=(suffix,method='GET',body,extra={})=>fetch(base+'/api/guilds/'+id+'/workspace'+suffix,{method,headers:{...headers,...extra},...(body?{body:JSON.stringify(body)}:{})});
+ assert.equal((await request('','GET',null,{cookie:''})).status,401);
+ permission=P.ManageGuild|P.Administrator;member.id='user';guild.members.me={permissions:{has:()=>true},roles:{highest:{comparePositionTo:()=>1}}};
+ const workspace=await request('');assert.equal(workspace.status,200);assert.equal((await workspace.json()).owner,false);
+ assert.equal((await request('/automations','PUT',{rules:[]})).status,403);assert.equal((await request('/setup','POST',{confirm:'Test'})).status,403);assert.equal((await request('/backups','POST',{})).status,403);
+ assert.equal((await request('/automations','PUT',{rules:[]},{origin:'https://evil.example'})).status,403);
+ assert.equal((await fetch(base+'/api/guilds/223456789012345678/workspace',{headers})).status,403);
+ const ownerSid='workspace-owner';setSession(crypto.createHash('sha256').update(ownerSid).digest('hex'),{user:{id:'owner'},csrf,guilds:[]},Date.now()+60000);member.id='owner';const own={cookie:'sid='+ownerSid};grant(id,'basic',1);
+ assert.equal((await request('/automations','PUT',{rules:[]},own)).status,200);
+ assert.equal((await request('/backups','POST',{},own)).status,403);
+ assert.equal((await request('/backups/schedule','PUT',{enabled:true,hours:24},own)).status,400);
+ assert.equal((await request('/setup','POST',{confirm:'wrong'},own)).status,400);
+ assert.equal((await request('/setup','POST',{confirm:'Test',enableWelcome:false,sayHi:false},own)).status,200);
+ grant(id,'plus',Date.now()+60000);assert.equal((await fetch(base+'/api/guilds/'+id+'/ai/chat',{method:'POST',headers:{...headers,...own},body:'{}'})).status,403);
+ member.id='user';
+});

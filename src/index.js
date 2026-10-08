@@ -1,6 +1,7 @@
 import {installCommandRuntime} from './command-runtime.js';
 import {installExperienceRuntime} from './experience-runtime.js';
 import {installGiftRuntime} from './gift-runtime.js';
+import {installProductRuntime} from './product-runtime.js';
 import {validateEnv} from './config.js';
 import {installTicketJourney} from './ticket-bootstrap.js';
 validateEnv();
@@ -8,6 +9,7 @@ installTicketJourney();
 installCommandRuntime();
 installGiftRuntime();
 installExperienceRuntime();
+installProductRuntime();
 const {startWeb}=await import('./web.js');
 const {client,startBot}=await import('./bot.js');
 const {attachTicketRefresh,attachTicketInteractions}=await import('./tickets.js');
@@ -27,5 +29,11 @@ const {auditSubscriptionIsolation}=await import('./subscription-diagnostics.js')
 auditSubscriptionIsolation();
 const {attachTierBranding}=await import('./tier-branding.js');
 attachTierBranding(client);
+const {attachFeatureGate}=await import('./feature-policy.js');
+const {attachAutomations}=await import('./automations.js');
+attachFeatureGate(client);
+attachAutomations(client);
+const {attachProductAudit}=await import('./product-audit.js');
+attachProductAudit(client);
 startWeb();
 startBot().catch(e=>{console.error('Bot login failed:',e);process.exit(1);});

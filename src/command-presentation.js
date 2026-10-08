@@ -3,6 +3,7 @@ import {commandProfiles,profileFor} from './command-profiles.js';
 import {sessionFor} from './command-core.js';
 import {env} from './config.js';
 import {basename} from 'node:path';
+import {localeFor,localizePayload} from './product-localization.js';
 const V2=32768,PRIVATE=64;
 const json=v=>v?.toJSON?v.toJSON():v;
 export function componentCount(values){return (values||[]).reduce((n,c)=>n+1+componentCount(c.components)+(c.accessory?componentCount([c.accessory]):0)+(c.items?.length||0),0);}
@@ -37,7 +38,7 @@ export function presentCommand(payload,name,{interaction={},privateResponse=true
  // Do not strip or retitle control-only edits; Discord keeps the existing card.
  if(!embeds.length&&!payload.content&&!payload.files?.length)return payload;
  const children=[],media=[],notes=[],files=[...(payload.files||[])];
- const heading=`### ${p.icon} ${titleFor(name,interaction)}\n-# VEX / ${names[p.layout]}`;
+ const heading=`### ${p.icon} ${titleFor(name,interaction)}\n-# VEX / ${interaction.vexLocale==='ckb'?p.ckb:names[p.layout]}`;
  const thumb=embeds.find(e=>e.thumbnail?.url)?.thumbnail?.url;
  if(thumb)children.push({type:9,components:[text(heading)],accessory:{type:11,media:{url:thumb},description:p.label}});else children.push(text(heading));
  children.push(separator());
@@ -59,7 +60,7 @@ export function presentCommand(payload,name,{interaction={},privateResponse=true
   }
   if(e.fields?.length){
    const label=p.layout==='milestone'?'YOUR PROGRESS':p.layout==='pass'?'PASS DETAILS':p.layout==='suite'?'ROOM CONTROLS':p.layout==='stream'?'EVENT ROUTING':p.layout==='coverage'?'PROTECTION SIGNALS':p.layout==='assignment'?'MEMBER & ROLE':p.layout==='transfer'?'TRANSFER DETAILS':p.layout==='restriction'?'DURATION & TARGET':p.layout==='cleanup'?'DELETION SCOPE':p.layout==='intelligence'?'REVIEW EVIDENCE':'DETAILS';
-   children.push(separator(),text(`-# ${label}\n`+e.fields.map(f=>`**${f.name}**\n${f.value}`).join('\n\n')));
+   children.push(separator(),text(`-# ${interaction.vexLocale==='ckb'?'وردەکارییەکان':label}\n`+e.fields.map(f=>`**${f.name}**\n${f.value}`).join('\n\n')));
   }
   if(e.image?.url)media.push({media:{url:e.image.url},description:e.title?.slice(0,200)||p.label});
   if(e.footer?.text)notes.push(e.footer.text);
@@ -79,7 +80,7 @@ export function presentCommand(payload,name,{interaction={},privateResponse=true
   for(const fileName of existingNames)if(!media.some(m=>m.media.url===`attachment://${fileName}`))children.push({type:13,file:{url:`attachment://${fileName}`}});
  }
  const commandLabel=name==='launch'?'Cinema Activity':'/'+name;
- children.push(separator(),text(`-# VEX · ${commandLabel} · ${p.icon} ${names[p.layout]}${notes.length?'\n'+notes.map(n=>escapeMarkdown(n)).join(' · ').slice(0,220):''}`));
+ children.push(separator(),text(`-# VEX · ${commandLabel} · ${p.icon} ${interaction.vexLocale==='ckb'?p.ckb:names[p.layout]}${notes.length?'\n'+notes.map(n=>escapeMarkdown(n)).join(' · ').slice(0,220):''}`));
  if(interaction.user?.id&&interaction.guildId&&!['help','commands'].includes(name)){
   const locale=['en','ckb','ar','tr'].includes(interaction.vexLocale)?interaction.vexLocale:'en';
   const id=(verb,arg)=>`vex:atlas:${interaction.user.id}:${interaction.guildId}:${locale}:${verb}:${arg}`;
@@ -102,7 +103,7 @@ export function wrapCommandInteraction(i){
   if(typeof i[method]!=='function')continue;const original=i[method].bind(i);
   i[method]=async payload=>{
    const name=commandForInteraction(i),privateResponse=method==='reply'||method==='followUp'?!!(payload?.ephemeral||bits(payload?.flags)&PRIVATE):!!(deferredPrivate||i.ephemeral||bits(i.message?.flags)&PRIVATE);
-   const rendered=presentCommand(payload,name,{interaction:i,privateResponse,editing:method==='editReply'||method==='update'});
+   i.vexLocale=localeFor(i);const rendered=presentCommand(privateResponse?localizePayload(payload,i.vexLocale):payload,name,{interaction:i,privateResponse,editing:method==='editReply'||method==='update'});
    const result=await original(rendered);
    if(method==='followUp'&&privateResponse&&(bits(rendered?.flags)&V2)&&result?.id)privateNativeFollowups.add(result.id);
    return result;
@@ -116,7 +117,7 @@ export function wrapCommandInteraction(i){
  if(typeof i.showModal==='function'){const original=i.showModal.bind(i);i.showModal=modal=>{
   const data=json(modal),name=commandForInteraction(i);if(!name)return original(modal);
   const components=(data.components||[]).map(row=>row.type===1&&row.components?.length===1&&row.components[0].type===4?(()=>{const input={...row.components[0]},label=input.label;delete input.label;return {type:18,label,component:input};})():row);
-  return original({...data,components});
+  return original(localizePayload({...data,components},localeFor(i)));
  };}
 }
 export {V2 as commandComponentsFlag};

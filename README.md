@@ -109,3 +109,38 @@ Keep one replica and mount durable storage before opening the bot to the public.
 
 ## Welcome Studio · 3.5.0
 Four design presets; live preview; rich embed or text format; member/server/custom portraits; banner, author, footer, timestamp; six custom information blocks; five HTTPS link buttons; optional member mention and private copy; bot greeting toggle. One saved configuration for dashboard and Discord. `/welcome preview`, `/welcome status`, `/welcome setup`, `/welcome configure` require Manage Server; configuration changes also respect dashboard editing access. Test cards use the saved configuration. Direct messages can fail independently if members disable them.
+
+### Product workspace (runtime v5)
+
+The dashboard now includes Setup assistant, permission diagnostics, Incident center,
+owner-approved Automations, and versioned structure Backups. Setup previews existing
+channels; it never creates resources or publishes messages. Automation rules are disabled
+until explicitly enabled by the server owner, use allowlisted actions and safe roles, and
+recheck access before acting. Incident review and backups are guild-scoped.
+
+| Capability | Basic (free) | Plus ($7/server/month) | Ultimate ($14/server/month) |
+| --- | --- | --- | --- |
+| Core, moderation, welcome, roles, levels, tickets, voice, permission diagnostics | Yes | Yes | Yes |
+| Member, message, moderation and voice logs | Yes | Yes | Yes |
+| Role, channel and server event logs; ticket transfer | — | Yes | Yes |
+| Automation rules | 0 | 5 (member/level) | 20 (also incident/ticket) |
+| Structure backup versions | 0; settings export available | 3 manual | 30; daily/weekly scheduling |
+| Incident history window / maximum stored events | 7 days / 500 | 30 days / 2,000 | 90 days / 10,000 |
+| AI Chat, AI Security, incident correlation | — | — | Yes |
+| Role choices / automatic responders / notification feeds | 5 / 3 / 1 | 20 / 10 / 5 | 20 / 20 / 12 |
+
+History is bounded by both time and event counts; a busy server can retain fewer days.
+Structure restore recreates only missing roles and channels; it does not recover messages
+or member role assignments. Expiry resolves Basic at execution time; premium configuration
+is retained and capped, not deleted. Gift upgrade converts unused Plus value to Ultimate
+remaining time at the $7/$14 ratio, then adds a calendar month. Keys remain single-use
+and apply to only the redeemed guild. Active Ultimate cannot be downgraded by a Plus key.
+
+Payment checkout/automatic renewal, external notification credentials, games, and domain
+changes remain deferred. Plan display does not imply a connected payment processor.
+
+`npm start` uses the versioned `scripts/bootstrap.mjs` pipeline. Existing sealed hosting
+installers remain execution-only compatibility stages, followed by repository-owned product
+policy and syntax checks. A hash-only runtime manifest and read-only product audit record
+which integration ran. This is consolidated orchestration, not a claim that all legacy
+installer source has been moved into the repository.

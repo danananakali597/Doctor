@@ -6,7 +6,7 @@ import path from 'node:path';
 import {EventEmitter} from 'node:events';
 import {Collection,PermissionsBitField,PermissionFlagsBits as P} from 'discord.js';
 process.env.DATA_DIR=fs.mkdtempSync(path.join(os.tmpdir(),'vex-tickets-'));
-const {saveSettings,db}=await import('../src/db.js');
+const {saveSettings,db,grant}=await import('../src/db.js');
 const {attachTicketInteractions,handleTicketInteraction,ticketPanel,ticketCard,publishTicketPanel}=await import('../src/tickets.js');
 const ids={guild:'123456789012345678',support:'223456789012345678',category:'323456789012345678',panel:'423456789012345678',owner:'523456789012345678',staff:'623456789012345678',other:'723456789012345678',bot:'823456789012345678',ticket:'923456789012345678'};
 const member=(id,staff=false)=>({id,user:{id,bot:false},permissions:new PermissionsBitField(0n),roles:{cache:new Collection(staff?[[ids.support,{id:ids.support}]]:[])}});
@@ -36,7 +36,7 @@ test('form creates one private numbered ticket and duplicate submission reuses i
 test('nonstaff cannot claim or transfer; staff assignment edits the same card',async()=>{
  const intruder=interaction('vex:ticket:claim',ids.other,{isButton:()=>true});await handleTicketInteraction(intruder);assert.match(desc(intruder),/staff permission/);assert.equal(edits.length,0);
  const staff=interaction('vex:ticket:claim',ids.staff,{isButton:()=>true});await handleTicketInteraction(staff);assert.match(desc(staff),/Assigned/);assert.equal(edits.length,1);assert.equal(edits[0].embeds[0].data.fields[1].value,`<@${ids.staff}>`);assert.equal(edits[0].embeds[0].data.color,0x3498db);
- const transfer=interaction('vex:ticket:transfer',ids.staff,{isButton:()=>true});await handleTicketInteraction(transfer);assert.equal(transfer.output.components[0].toJSON().components[0].custom_id,'vex:ticket:assign:'+ids.ticket);
+ grant(ids.guild,'plus',Date.now()+60000);const transfer=interaction('vex:ticket:transfer',ids.staff,{isButton:()=>true});await handleTicketInteraction(transfer);assert.equal(transfer.output.components[0].toJSON().components[0].custom_id,'vex:ticket:assign:'+ids.ticket);
  const nonstaff=interaction('vex:ticket:assign:'+ids.ticket,ids.staff,{isUserSelectMenu:()=>true,values:[ids.other]});await handleTicketInteraction(nonstaff);assert.match(desc(nonstaff),/current member/);assert.equal(db.prepare('SELECT claimed FROM community_tickets').get().claimed,ids.staff);
  people.set(ids.other,member(ids.other,true));const assigned=interaction('vex:ticket:assign:'+ids.ticket,ids.staff,{isUserSelectMenu:()=>true,values:[ids.other]});await handleTicketInteraction(assigned);assert.match(desc(assigned),/Transferred/);assert.equal(edits.at(-1).embeds[0].data.fields[1].value,`<@${ids.other}>`);
 });

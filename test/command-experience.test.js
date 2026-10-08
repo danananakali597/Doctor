@@ -112,3 +112,8 @@ test('experience router runs before existing handlers and leaves other workflows
  const original=click('vex:core:'+owner+':en:rank:');assert.equal(commandForInteraction(original),'rank');
 });
 test.after(()=>{db.close();fs.rmSync(process.env.DATA_DIR,{recursive:true,force:true});});
+test('search pagination retains all matching results and binds tokens to owner, guild and expiry',async t=>{
+ const {searchState}=await import('../src/command-atlas.js');const x=i(),first=atlasPage(x,{query:'Guide'}),next=first.components.at(-1).toJSON().components[2];assert.equal(next.disabled,false);const token=next.custom_id.split(':').at(-1).split(',')[2];assert.equal(searchState(x,token).query,'Guide');assert.throws(()=>searchState({...x,user:{id:target}},token),/expired/);assert.throws(()=>searchState({...x,guildId:'other'},token),/expired/);
+ const names=[];let p=first;for(let page=0;page<3;page++){names.push(...p.components[1].toJSON().components[0].options.map(o=>o.value));const next=p.components.at(-1).toJSON().components[2];assert.ok(next.custom_id.length<=100);if(page<2){const y=click(next.custom_id);await atlasInteraction(y);p=y.track.payload;}}
+ assert.equal(new Set(names).size,44);assert.equal(p.components.at(-1).toJSON().components[2].disabled,true);const now=Date.now();t.mock.method(Date,'now',()=>now+16*60000);assert.throws(()=>searchState(x,token),/expired/);
+});

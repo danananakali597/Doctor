@@ -29,10 +29,13 @@ export const redeemGiftKey=db.transaction((input,guild,actor)=>{
  if(!row||row.revoked_at!==null||row.redeemed_at!==null)throw Error('Invalid or unavailable key');
  const current=db.prepare('SELECT * FROM entitlements WHERE guild=?').get(guild);
  const active=current&&current.expires>now&&['plus','ultimate'].includes(current.plan);
- if(active&&current.plan!==row.plan)throw Error('Wait for your current plan to expire before activating a different plan');
- const expires=nextMonthlyPeriodEnd(active?current.expires:now);
+ if(active&&current.plan==='ultimate'&&row.plan==='plus')throw Error('Activate a lower plan after your current plan expires');
+ // Upgrade immediately. Preserve the unused Plus value as Ultimate time ($7/$14).
+ const upgraded=!!(active&&current.plan==='plus'&&row.plan==='ultimate');
+ const credit=upgraded?Math.floor((current.expires-now)/2):0;
+ const expires=upgraded?nextMonthlyPeriodEnd(now)+credit:nextMonthlyPeriodEnd(active?current.expires:now);
  const result=db.prepare('UPDATE gift_keys SET redeemed_at=?,redeemed_by=?,guild=?,entitlement_expires=? WHERE id=? AND redeemed_at IS NULL AND revoked_at IS NULL').run(now,actor,guild,expires,row.id);
  if(!result.changes)throw Error('Invalid or unavailable key');
  grant(guild,row.plan,expires);
- return {plan:row.plan,expires};
+ return upgraded?{plan:row.plan,expires,upgraded,creditMilliseconds:credit}:{plan:row.plan,expires};
 });

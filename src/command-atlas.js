@@ -5,6 +5,16 @@ import {commandGroups,commandProfiles,profileFor} from './command-profiles.js';
 import {deferPrivate} from './interaction-response.js';
 import {env} from './config.js';
 import {plan} from './db.js';
+import crypto from 'node:crypto';
+import {commandGuide} from './command-guide-locales.js';
+import {localeFor} from './product-localization.js';
+const searches=new Map();
+function searchToken(i,query,group){
+ const now=Date.now();for(const [key,v]of searches)if(v.expires<now)searches.delete(key);
+ while(searches.size>=2000)searches.delete(searches.keys().next().value);
+ const key=crypto.randomBytes(6).toString('hex');searches.set(key,{query,group,owner:i.user.id,guild:i.guildId,expires:now+15*60000});return key;
+}
+export function searchState(i,key){const s=searches.get(key);if(!s||s.expires<Date.now()||s.owner!==i.user.id||s.guild!==i.guildId)throw Error('Search expired. Search again in /commands.');return s;}
 const copy={en:['All commands','Choose a category','Choose a command','Search','Previous','Next','Browse all','Inputs','Workflow','Access','Required','Optional','No results','Run the command','Choose a subcommand','Search by command or feature','Command or feature'],ckb:['هەموو کۆماندەکان','بەشێک هەڵبژێرە','کۆماندێک هەڵبژێرە','گەڕان','پێشوو','دواتر','بینینی هەمووی','زانیارییە پێویستەکان','هەنگاوەکان','دەستگەیشتن','پێویست','ئارەزوومەندانە','ئەنجام نییە','بەکارهێنانی کۆماند','ژێرکۆماندێک هەڵبژێرە','بە کۆماند یان تایبەتمەندی بگەڕێ','کۆماند یان تایبەتمەندی'],ar:['كل الأوامر','اختر قسماً','اختر أمراً','بحث','السابق','التالي','تصفح الكل','المدخلات','الخطوات','الوصول','مطلوب','اختياري','لا توجد نتائج','استخدام الأمر','اختر أمراً فرعياً','ابحث عن أمر أو ميزة','الأمر أو الميزة'],tr:['Tüm komutlar','Kategori seç','Komut seç','Ara','Önceki','Sonraki','Tümünü gör','Girdiler','İş akışı','Erişim','Gerekli','İsteğe bağlı','Sonuç yok','Komutu kullan','Alt komut seç','Komut veya özellik ara','Komut veya özellik']};
 const groups={en:['Workspace','Community','Security','Moderation','Support','Voice','Server logs','AI','Cinema'],ckb:['ناوەندی کۆنترۆڵ','کۆمەڵگا','پاراستن','بەڕێوەبردن','پشتیوانی','دەنگ','لۆگەکانی سێرڤەر','زیرەکی دەستکرد','سینەما'],ar:['التحكم','المجتمع','الحماية','الإشراف','الدعم','الصوت','سجلات الخادم','الذكاء الاصطناعي','السينما'],tr:['Kontroller','Topluluk','Güvenlik','Moderasyon','Destek','Ses','Sunucu kayıtları','Yapay zekâ','Sinema']};
 const word=(l,n)=>(copy[l]||copy.en)[n];
@@ -25,21 +35,21 @@ export function cataloguePage(catalogue,group='all',page=0,query=''){
 function languageRow(i,l){return new Row().addComponents(new Select().setCustomId(atlasId(i,l,'language')).setPlaceholder('Language / زمان').addOptions(['en','ckb','ar','tr'].map((v,n)=>({label:['English','کوردی','العربية','Türkçe'][n],value:v,default:v===l}))));}
 function dashboard(i,l,name='commands'){return new Button().setLabel(l==='ckb'?'داشبۆرد':'Dashboard').setStyle(Style.Link).setURL(env.publicUrl+'/?guild='+i.guildId+'&section='+encodeURIComponent(profileFor(name)?.section||'commands'));}
 export function atlasPage(i,{locale='en',group='all',page=0,query=''}={}){
- const catalogue=liveCatalogue(i.client),view=cataloguePage(catalogue,group,page,query);
+ const catalogue=liveCatalogue(i.client),view=cataloguePage(catalogue,group,page,query),token=query?searchToken(i,query,group):'';
  const category=new Row().addComponents(new Select().setCustomId(atlasId(i,locale,'category')).setPlaceholder(word(locale,1)).addOptions([{label:word(locale,0),value:'all',default:group==='all'},...commandGroups.map((g,n)=>({label:groups[locale][n],value:g,default:g===group}))]));
  const rows=[category];
  if(view.items.length)rows.push(new Row().addComponents(new Select().setCustomId(atlasId(i,locale,'open')).setPlaceholder(word(locale,2)).addOptions(view.items.map(c=>({label:c.type===4?c.name+' · Activity':'/'+c.name,value:c.name,description:(locale==='ckb'?profileFor(c.name).ckb:c.description||profileFor(c.name).label).slice(0,100)})))));
- rows.push(languageRow(i,locale),new Row().addComponents(button(i,locale,'search',word(locale,3)),button(i,locale,'page',word(locale,4),group+','+(view.page-1),view.page===0||!!query),button(i,locale,'page',word(locale,5),group+','+(view.page+1),view.page===view.pages-1||!!query),dashboard(i,locale)));
+ rows.push(languageRow(i,locale),new Row().addComponents(button(i,locale,'search',word(locale,3)),button(i,locale,'page',word(locale,4),group+','+(view.page-1)+','+token,view.page===0),button(i,locale,'page',word(locale,5),group+','+(view.page+1)+','+token,view.page===view.pages-1),dashboard(i,locale)));
  const list=view.items.map(c=>`${profileFor(c.name).icon} **${c.type===4?c.name+' · Activity':'/'+c.name}** — ${safe(locale==='ckb'?profileFor(c.name).ckb:profileFor(c.name).label,80)}`).join('\n');
- const embed=new EmbedBuilder().setTitle(locale==='ckb'?'نەخشەی کۆماندەکانی VEX':'VEX Command Atlas').setDescription(`${catalogue.length} experiences · ${view.page+1}/${view.pages}${query?' · '+safe(query,60):''}\n\n${list||word(locale,12)}`).setColor(0xc4b5fd).setFooter({text:'Choose a command to see its own workflow and registered inputs.'});
+ const embed=new EmbedBuilder().setTitle(locale==='ckb'?'نەخشەی کۆماندەکانی VEX':'VEX Command Atlas').setDescription(`${catalogue.length} ${locale==='ckb'?'کۆماند و ئەکتڤیتی':'experiences'} · ${view.page+1}/${view.pages}${query?' · '+safe(query,60):''}\n\n${list||word(locale,12)}`).setColor(0xc4b5fd).setFooter({text:locale==='ckb'?'کۆماندێک هەڵبژێرە بۆ بینینی هەنگاو و زانیارییە پێویستەکانی.':'Choose a command to see its own workflow and registered inputs.'});
  return {embeds:[embed],components:rows,allowedMentions:{parse:[]}};
 }
 export function inputGuide(options,locale='en'){
  return (options||[]).filter(o=>o.type>2).map(o=>{
   const choices=o.choices?.map(c=>`${safe(c.name,300)} → \`${safe(c.value,300)}\``).join(' · ');
-  const bounds=[o.min_value!==undefined?'min '+o.min_value:null,o.max_value!==undefined?'max '+o.max_value:null,o.min_length!==undefined?'min '+o.min_length+' characters':null,o.max_length!==undefined?'max '+o.max_length+' characters':null].filter(Boolean).join(' · ');
-  const type={3:'Text',4:'Integer',5:'Yes / No',6:'Member',7:'Channel',8:'Role',9:'Mentionable',10:'Number',11:'Attachment'}[o.type]||'Input';
-  return `**${safe(o.name,40)}** · ${word(locale,o.required?10:11)} · ${type}\n${safe(o.description,300)}${choices?'\n'+choices:''}${bounds?'\n'+bounds:''}`;
+  const min=locale==='ckb'?'کەمترین ':'min ',max=locale==='ckb'?'زۆرترین ':'max ',chars=locale==='ckb'?' پیت':' characters';const bounds=[o.min_value!==undefined?min+o.min_value:null,o.max_value!==undefined?max+o.max_value:null,o.min_length!==undefined?min+o.min_length+chars:null,o.max_length!==undefined?max+o.max_length+chars:null].filter(Boolean).join(' · ');
+  const type=(locale==='ckb'?{3:'دەق',4:'ژمارەی تەواو',5:'بەڵێ / نەخێر',6:'ئەندام',7:'چەناڵ',8:'ڕۆڵ',9:'کەس یان ڕۆڵ',10:'ژمارە',11:'هاوپێچ'}:{3:'Text',4:'Integer',5:'Yes / No',6:'Member',7:'Channel',8:'Role',9:'Mentionable',10:'Number',11:'Attachment'})[o.type]||'Input';
+  const labels={member:'ئەندام',member_id:'ناسنامەی ئەندام',channel:'چەناڵ',role:'ڕۆڵ',reason:'هۆکار',action:'کردار',enabled:'چالاکبوون',name:'ناو',message:'نامە',minutes:'ماوە بە خولەک',seconds:'ماوە بە چرکە',amount:'ژمارە',level:'لەڤڵ',language:'زمان',event:'ڕووداو',color:'ڕەنگ',topic:'بابەت',query:'گەڕان',question:'پرسیار'};return `**${safe(o.name,40)}** · ${word(locale,o.required?10:11)} · ${type}\n${safe(locale==='ckb'?labels[o.name]||type:o.description,300)}${choices?'\n'+choices:''}${bounds?'\n'+bounds:''}`;
  }).join('\n\n');
 }
 const permissionValue=c=>c.default_member_permissions??c.defaultMemberPermissions?.bitfield;
@@ -52,11 +62,11 @@ function registeredMention(c,sub){if(c.type===4)return 'Open **VEX Cinema** from
 export function commandPaths(c){return (c.options||[]).filter(o=>o.type<=2).flatMap(o=>o.type===2?(o.options||[]).map(s=>({...s,name:o.name+' '+s.name})):[o]);}
 export function commandDetail(i,actor,name,locale='en',sub=''){
  const c=liveCatalogue(i.client).find(c=>c.name===name);if(!c)throw Error('This command is not registered by the running bot.');
- const p=profileFor(name),branches=commandPaths(c),branch=branches.find(o=>o.name===sub)||branches[0],opts=branch?.options||c.options||[];
+ const p=profileFor(name),guide=commandGuide(p,name,locale),branches=commandPaths(c),branch=branches.find(o=>o.name===sub)||branches[0],opts=branch?.options||c.options||[];
  const denied=accessReason(i,actor,c),perms=permissionValue(c);
- const fields=[{name:word(locale,8),value:p.steps.map((s,n)=>`**${n+1}** · ${s}`).join('\n')},{name:word(locale,9),value:(denied?'🔒 '+denied:'✓ Your command policy and Discord permissions allow opening this command here.')+'\nServer plan: **'+plan(i.guildId).toUpperCase()+'**'+(perms?'\n'+new PermissionsBitField(BigInt(perms)).toArray().join(', '):'')+'\nFeature switches, hierarchy and plan requirements are checked when the command runs.'}];
+ const fields=[{name:word(locale,8),value:guide.steps.map((s,n)=>`**${n+1}** · ${s}`).join('\n')},{name:word(locale,9),value:(denied?'🔒 '+denied:locale==='ckb'?'✓ دەسەڵاتی کۆماند و Discord ڕێگا دەدەن.':'✓ Your command policy and Discord permissions allow opening this command here.')+'\n'+(locale==='ckb'?'پلانی سێرڤەر: ':'Server plan: ')+'**'+plan(i.guildId).toUpperCase()+'**'+(perms?'\n'+new PermissionsBitField(BigInt(perms)).toArray().join(', '):'')+'\n'+(locale==='ckb'?'چالاکبوون، پلەی ڕۆڵ و پلان لە کاتی بەکارهێنان دەپشکنرێن.':'Feature switches, hierarchy and plan requirements are checked when the command runs.')}];
  const inputs=inputGuide(opts,locale);if(inputs){const parts=[];for(let n=0;n<inputs.length;n+=1000)parts.push({name:word(locale,7)+(n?' · '+(parts.length+1):''),value:inputs.slice(n,n+1000)});fields.splice(1,0,...parts);}
- const embed=new EmbedBuilder().setTitle(p.icon+' '+(locale==='ckb'?p.ckb:p.label)).setColor(p.color).setDescription(`${safe(c.description,300)}\n\n**${word(locale,13)}**\n${registeredMention(c,branch?.name)}\n\n${p.tip}`).addFields(fields);
+ const embed=new EmbedBuilder().setTitle(p.icon+' '+(locale==='ckb'?p.ckb:p.label)).setColor(p.color).setDescription(`${safe(locale==='ckb'?p.ckb:c.description,300)}\n\n**${word(locale,13)}**\n${registeredMention(c,branch?.name)}\n\n${guide.tip}`).addFields(fields);
  const rows=[];
  if(branches.length)rows.push(new Row().addComponents(new Select().setCustomId(atlasId(i,locale,'sub',name)).setPlaceholder(word(locale,14)).addOptions(branches.slice(0,25).map(b=>({label:b.name,value:b.name,description:(b.description||'').slice(0,100),default:b.name===branch?.name})))));
  rows.push(new Row().addComponents(button(i,locale,'category',word(locale,6),'all'),button(i,locale,'category',groups[locale][commandGroups.indexOf(p.group)],p.group),dashboard(i,locale,name)),languageRow(i,locale));
@@ -67,7 +77,7 @@ export async function atlasInteraction(i){
  if(!handlesAtlas(i))return false;let locale='en';
  try{
   if(i.isChatInputCommand?.()||i.customId==='vex:atlas:start'){
-   locale=i.options?.getString?.('language')||'en';if(!copy[locale])locale='en';i.vexLocale=locale;i.vexCommandName=i.commandName||'commands';
+   locale=localeFor(i);if(!copy[locale])locale='en';i.vexLocale=locale;i.vexCommandName=i.commandName||'commands';
    await deferPrivate(i);const actor=await i.guild.members.fetch({user:i.user.id,force:true});
    const name=i.commandName||'commands',entry=liveCatalogue(i.client).find(c=>c.name===name)||commands.find(c=>c.name===name),denied=accessReason(i,actor,entry);if(denied)throw Error(denied);
    await i.editReply(atlasPage(i,{locale}));return true;
@@ -85,7 +95,7 @@ export async function atlasInteraction(i){
   else if(verb==='results')payload=atlasPage(i,{locale,query:i.fields.getTextInputValue('query').trim()});
   else if(verb==='language'){locale=copy[i.values?.[0]]?i.values[0]:'en';i.vexLocale=locale;payload=atlasPage(i,{locale});}
   else if(verb==='category')payload=atlasPage(i,{locale,group:commandGroups.includes(arg||i.values?.[0])?arg||i.values[0]:'all'});
-  else if(verb==='page'){const [group,page]=arg.split(',');payload=atlasPage(i,{locale,group:commandGroups.includes(group)?group:'all',page:Number(page)});}
+  else if(verb==='page'){const [group,page,key]=arg.split(','),state=key?searchState(i,key):{};payload=atlasPage(i,{locale,group:state.group||(commandGroups.includes(group)?group:'all'),page:Number(page),query:state.query||''});}
   else throw Error('Open /commands again to refresh your guide.');
   await i.editReply(payload);
  }catch(e){const payload={content:String(e.message||'Unable to open the guide.'),embeds:[],components:[],allowedMentions:{parse:[]}};if(i.deferred||i.replied)await i.editReply(payload).catch(()=>{});else await i.reply({...payload,flags:64}).catch(()=>{});}

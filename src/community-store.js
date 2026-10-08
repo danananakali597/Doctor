@@ -8,8 +8,8 @@ CREATE UNIQUE INDEX IF NOT EXISTS one_open_ticket ON community_tickets(guild,use
 export const level=xp=>Math.floor(Math.sqrt(xp/100));
 export function awardXP(guild,user,content,amount,cooldown,now=Date.now()){
  const hash=crypto.createHash('sha256').update(content.trim().toLowerCase()).digest('hex');
- return db.transaction(()=>{const old=db.prepare('SELECT * FROM community_xp WHERE guild=? AND user=?').get(guild,user)||{xp:0,last:0,hash:''};if(now-old.last<cooldown*1000||hash===old.hash||content.trim().length<4)return null;
- const xp=old.xp+amount;db.prepare('INSERT INTO community_xp VALUES(?,?,?,?,?) ON CONFLICT(guild,user) DO UPDATE SET xp=excluded.xp,last=excluded.last,hash=excluded.hash').run(guild,user,xp,now,hash);return {xp,level:level(xp),previous:level(old.xp)};})();
+ const awarded=db.transaction(()=>{const old=db.prepare('SELECT * FROM community_xp WHERE guild=? AND user=?').get(guild,user)||{xp:0,last:0,hash:''};if(now-old.last<cooldown*1000||hash===old.hash||content.trim().length<4)return null;
+ const xp=old.xp+amount;db.prepare('INSERT INTO community_xp VALUES(?,?,?,?,?) ON CONFLICT(guild,user) DO UPDATE SET xp=excluded.xp,last=excluded.last,hash=excluded.hash').run(guild,user,xp,now,hash);return {xp,level:level(xp),previous:level(old.xp)};})();if(awarded&&awarded.level>awarded.previous)event(guild,'level_reached',{member:user,level:awarded.level,previous:awarded.previous});return awarded;
 }
 export function rank(guild,user){const r=db.prepare('SELECT xp FROM community_xp WHERE guild=? AND user=?').get(guild,user)||{xp:0};return {...r,level:level(r.xp),position:db.prepare('SELECT COUNT(*)+1 AS n FROM community_xp WHERE guild=? AND xp>?').get(guild,r.xp).n};}
 export const leaderboard=g=>db.prepare('SELECT user,xp FROM community_xp WHERE guild=? ORDER BY xp DESC,user LIMIT 20').all(g).map(r=>({...r,level:level(r.xp)}));

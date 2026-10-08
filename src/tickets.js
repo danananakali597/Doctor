@@ -3,6 +3,7 @@ import './community-store.js';
 import {ActionRowBuilder,AttachmentBuilder,ButtonBuilder,ButtonStyle,ChannelType,EmbedBuilder,Events,ModalBuilder,PermissionFlagsBits as P,StringSelectMenuBuilder,TextInputBuilder,TextInputStyle,UserSelectMenuBuilder} from 'discord.js';
 import {fileURLToPath} from 'node:url';
 import {db,event,events,getState,setState,settings} from './db.js';
+import {requireFeature} from './feature-policy.js';
 
 export const ticketTopics=Object.freeze([
  {id:'technical',label:'Technical help',name:'Technical Support',emoji:'⚙️',description:'Get help with setup, commands, or issues.'},
@@ -56,6 +57,7 @@ async function createTicket(i,type,subject,body){return exclusive(i.guildId+':'+
  event(i.guildId,'ticket_opened',{actor:i.user.id,channel:channel.id,number:n,type});return reply('Ticket opened',`Your conversation is ready: <#${channel.id}>`);
  });}
 async function action(i,verb,targetId){const initial=rowFor(i);return exclusive(i.guildId+':'+initial.user,async()=>{
+ if(['transfer','assign'].includes(verb))requireFeature(i.guildId,'ticketTransfer');
  const row=rowFor(i),config=cfg(i.guildId),actor=await freshMember(i),staff=isStaff(actor,config),detail=detailsFor(row);
  if(!staff&&(verb!=='close'||row.user!==actor.id))throw Error('Ticket staff permission required');
  if(['claim','transfer','assign'].includes(verb)&&row.status!=='open')throw Error('Reopen this ticket before assigning it');
@@ -86,6 +88,11 @@ export async function handleTicketInteraction(i){
   else throw Error('This ticket control is outdated');
  }catch(e){const payload=reply('Ticket action failed',String(e.message||'Please try again.').slice(0,1800));if(i.deferred||i.replied)await i.editReply(payload);else await respondPrivate(i,{...payload,flags:64});}
  return true;
+}
+export async function autoAssignTicket(g,channelId,staffId,ownerId){
+ if(ownerId!==g.ownerId)throw Error('Current server owner approval required');
+ requireFeature(g.id,'advancedAutomations');const channel=g.channels.cache.get(channelId);if(!channel)throw Error('Ticket channel unavailable');
+ return action({guild:g,guildId:g.id,channelId,channel,user:{id:ownerId}},'assign',staffId);
 }
 export async function publishConfiguredTicketPanel(g){
  const config=cfg(g.id);if(!config.enabled)throw Error('Enable and save this module first');
