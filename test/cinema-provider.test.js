@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {Window} from 'happy-dom';
+import {cinemaProviderUrl,configureCinemaFrame,cinemaDiscordHost} from '../public/cinema-provider.js';
+import {integrateCinemaMappedPlayer} from '../src/cinema-link-runtime.js';
+test('Discord player uses the authorized host mapping',()=>{assert.equal(cinemaProviderUrl('https://vidmoly.org/embed-abc123.html',cinemaDiscordHost),'/.proxy/kc/vidmoly/embed-abc123.html');assert.equal(cinemaProviderUrl('https://vidmoly.org/embed-abc123.html','example.com'),'https://vidmoly.org/embed-abc123.html');});
+test('unmapped hosts and unsafe player URLs cannot be framed inside Discord',()=>{for(const url of ['https://other.example/embed-abc123.html','https://vidmoly.org.evil.test/embed-abc123.html','https://vidmoly.org/account','https://user@vidmoly.org/embed-abc123.html','http://vidmoly.org/embed-abc123.html'])assert.throws(()=>cinemaProviderUrl(url,cinemaDiscordHost));});
+test('mapped provider remains isolated from the parent application',()=>{const frame=new Window().document.createElement('iframe');configureCinemaFrame(frame,'https://vidmoly.org/embed-abc123.html',cinemaDiscordHost);assert.equal(frame.getAttribute('src'),'/.proxy/kc/vidmoly/embed-abc123.html');assert.doesNotMatch(frame.getAttribute('sandbox'),/allow-same-origin|allow-top-navigation|allow-popups/);assert.match(frame.getAttribute('sandbox'),/allow-scripts/);});
+test('runtime selects mapped provider without losing the server selector',()=>{const source="async function kcLoadMovieServers(movieUrl){frame.src=d.embedUrl;const chosen=(data.servers||[]).find(x=>x.selected)||(data.servers||[])[0];if(chosen)await loadServer(chosen.id);}";const next=integrateCinemaMappedPlayer(source);assert.equal(integrateCinemaMappedPlayer(next),next);assert.match(next,/configureCinemaFrame\(frame,d.embedUrl,location.hostname\)/);assert.match(next,/select.value=String\(chosen.id\)/);});

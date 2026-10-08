@@ -28,9 +28,19 @@ export function integrateCinemaDashboard(source){
  if(!source.includes(anchor))throw Error('Cinema dashboard integration: community routing unavailable');
  return "import {cinemaDashboard} from './cinema-dashboard.js';\n"+source.replace(anchor,"/* VEX_CINEMA_DASHBOARD */ else if(page==='community:cinema'){ $('pageTitle').textContent=t('Cinema');$('pageDescription').textContent=t('Choose a movie. Watch together in Discord.');$('breadcrumb').textContent=t('Cinema');cinemaDashboard(root,{h,raw,t,api,data,commandPanel:(panel,names,title)=>commandsUI({h,raw,data,patch,mark,names,title})(panel)});} "+anchor);
 }
+export function integrateCinemaMappedPlayer(source){
+ if(source.includes('/* VEX_CINEMA_MAPPED_PROVIDER */'))return source;
+ if(!source.includes('async function kcLoadMovieServers(movieUrl)'))return source;
+ if(!source.includes('frame.src=d.embedUrl;'))throw Error('Cinema provider integration: iframe source unavailable');
+ source="/* VEX_CINEMA_MAPPED_PROVIDER */ import {configureCinemaFrame,cinemaDiscordHost} from './cinema-provider.js';\n"+source.replace('frame.src=d.embedUrl;', 'configureCinemaFrame(frame,d.embedUrl,location.hostname);');
+ source=source.replace("const chosen=(data.servers||[]).find(x=>x.selected)","const chosen=(location.hostname===cinemaDiscordHost?(data.servers||[]).find(x=>/vidmoly/i.test(x.label||'')):null)||(data.servers||[]).find(x=>x.selected)");
+ source=source.replace('if(chosen)await loadServer(chosen.id);','if(chosen){select.value=String(chosen.id);await loadServer(chosen.id);}');
+ return source;
+}
 export function installCinemaLinks(){
  const web=path.join(root,'src/web.js');fs.writeFileSync(web,integrateCinemaWeb(fs.readFileSync(web,'utf8')));
  const dashboard=path.join(root,'public/app.js');fs.writeFileSync(dashboard,integrateCinemaDashboard(fs.readFileSync(dashboard,'utf8')));
  const dir=path.join(root,'public/activity');if(!fs.existsSync(dir))return;
- for(const name of fs.readdirSync(dir).filter(n=>/^app(?:-v\d+)?\.js$/.test(n))){const file=path.join(dir,name),before=fs.readFileSync(file,'utf8'),after=integrateCinemaPlayer(before);if(before!==after)fs.writeFileSync(file,after);}
+ fs.copyFileSync(path.join(root,'public/cinema-provider.js'),path.join(dir,'cinema-provider.js'));
+ for(const name of fs.readdirSync(dir).filter(n=>/^app(?:-v\d+)?\.js$/.test(n))){const file=path.join(dir,name),before=fs.readFileSync(file,'utf8'),after=integrateCinemaMappedPlayer(integrateCinemaPlayer(before));if(before!==after)fs.writeFileSync(file,after);}
 }
