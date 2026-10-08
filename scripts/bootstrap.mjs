@@ -21,5 +21,5 @@ try{
  const files=fs.readdirSync('src').filter(f=>f.endsWith('.js')).map(f=>({path:'src/'+f,sha256:crypto.createHash('sha256').update(fs.readFileSync('src/'+f)).digest('hex')}));
  const directory=process.env.DATA_DIR||'./data';fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(path.join(directory,'runtime-manifest.json'),JSON.stringify({version:5,at:Date.now(),files},null,2),{mode:0o600});
  console.log('VEX_BOOTSTRAP_MANIFEST',JSON.stringify({version:5,files:files.length,source:'GitHub bootstrap with explicit compatibility stages'}));
- for(const key of ['VEX_AI_STARTUP_AUDIT_SOURCE','VEX_AI_PROVIDER_CONNECTION_AUDIT_SOURCE','VEX_SECURITY_SUITE_STARTUP_AUDIT_SOURCE','VEX_DASHBOARD_CONNECTION_AUDIT_SOURCE','VEX_SECURITY_ADVANCED_AUDIT_SOURCE'])if(process.env[key]){const Run=Object.getPrototypeOf(async function(){}).constructor;await new Run(process.env[key])();}
+ const {runCompatibilityAudits}=await import('../runtime-audits.mjs');await runCompatibilityAudits();
 }finally{fs.rmSync(temp,{recursive:true,force:true});}
