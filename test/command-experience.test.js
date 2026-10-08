@@ -29,10 +29,10 @@ const ids=cs=>(cs||[]).flatMap(c=>[c.custom_id||'',...ids(c.components)]).filter
 function validate(p){assert.ok(p.flags&32768);assert.equal(p.components[0].type,17);assert.ok(componentCount(p.components)<=40);assert.ok(strings(p.components).length<=4000);new ContainerBuilder(p.components[0]).toJSON();for(const id of ids(p.components))assert.ok(id.length<=100);}
 saveSettings(guildId,{community:{levels:{enabled:true}}});
 test('every registered command has an individual profile, workflow and native card',()=>{
- assert.equal(Object.keys(commandProfiles).length,44);for(const c of commands)assert.ok(commandProfiles[c.name],c.name);
+ assert.equal(Object.keys(commandProfiles).length,45);for(const c of commands)assert.ok(commandProfiles[c.name],c.name);
  const layouts=new Set();for(const [name,p] of Object.entries(commandProfiles)){
   layouts.add(p.layout);assert.equal(p.steps.length,3);const out=presentCommand({embeds:[new EmbedBuilder().setTitle('Actual result').setDescription('Actual server data').addFields({name:'Value',value:'42'})]},name);validate(out);assert.match(strings(out.components),/Actual server data/);assert.equal(out.components[0].accent_color,p.color);
- }assert.equal(layouts.size,44);
+ }assert.equal(layouts.size,45);
 });
 test('native conversion preserves controls, mentions, evidence, images and attached files',()=>{
  const row=new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId('vex:roles:select').setStyle(ButtonStyle.Secondary).setLabel('Choose'));
@@ -54,8 +54,8 @@ test('interaction wrappers preserve private acknowledgement and modernize origin
  const m=new ModalBuilder().setCustomId('vex:core:x:en:reason:y').setTitle('Reason').addComponents(new ActionRowBuilder().addComponents(new TextInputBuilder().setCustomId('reason').setLabel('Reason').setStyle(TextInputStyle.Paragraph).setRequired(true).setMaxLength(450)));await x.showModal(m);assert.equal(x.track.modal.components[0].type,18);assert.equal(x.track.modal.components[0].component.custom_id,'reason');assert.equal(x.track.modal.components[0].component.max_length,450);
  const publicClick=click('vex:ticket:test');publicClick.message.flags=0;wrapCommandInteraction(publicClick);const panel={embeds:[{title:'Public panel'}]};await publicClick.update(panel);assert.equal(publicClick.track.payload,panel);
 });
-test('all 44 commands are reachable through paging and category menus',()=>{
- let names=[];for(let page=0;page<3;page++)names.push(...cataloguePage(catalogue,'all',page).items.map(c=>c.name));assert.equal(new Set(names).size,44);
+test('all 45 commands are reachable through paging and category menus',()=>{
+ let names=[];for(let page=0;page<3;page++)names.push(...cataloguePage(catalogue,'all',page).items.map(c=>c.name));assert.equal(new Set(names).size,45);
  for(const locale of ['en','ckb','ar','tr'])for(const group of ['all',...new Set(Object.values(commandProfiles).map(p=>p.group))]){
   const out=atlasPage(i(),{locale,group});for(const row of out.components){const r=row.toJSON();for(const c of r.components){assert.ok((c.custom_id||'').length<=100);assert.ok((c.options?.length||0)<=25);}}
   validate(presentCommand(out,'commands'));
@@ -76,8 +76,8 @@ test('real Discord command models retain permissions and camel-case input bounds
  const detail=commandDetail(x,actor,'setlevel');assert.match(detail.embeds[0].data.fields.find(f=>f.name==='Inputs').value,/316/);assert.match(detail.embeds[0].data.fields.find(f=>f.name==='Access').value,/Administrator/);actor.permissions=new PermissionsBitField(P.Administrator);await client.destroy();
 });
 test('Cinema entry point stays in the atlas and uses the real Activity launcher instead of a fake slash command',()=>{
- const x=i(),entry=catalogue.find(c=>c.name==='launch');x.client.application.commands.cache=new Collection(catalogue.map(c=>[c.id,c.name==='launch'?{...entry,type:4}:c]));assert.equal(liveCatalogue(x.client).length,44);
- const detail=commandDetail(x,actor,'launch');assert.match(detail.embeds[0].data.description,/Activity launcher/);assert.ok(!detail.embeds[0].data.description.includes('</launch:'));assert.match(strings(showcasePayload(x.client.application.commands.cache).components),/44 command experiences/);
+ const x=i(),entry=catalogue.find(c=>c.name==='launch');x.client.application.commands.cache=new Collection(catalogue.map(c=>[c.id,c.name==='launch'?{...entry,type:4}:c]));assert.equal(liveCatalogue(x.client).length,45);
+ const detail=commandDetail(x,actor,'launch');assert.match(detail.embeds[0].data.description,/Activity launcher/);assert.ok(!detail.embeds[0].data.description.includes('</launch:'));assert.match(strings(showcasePayload(x.client.application.commands.cache).components),/45 command experiences/);
 });
 test('guild-aware settings links choose only installed, accessible dashboard servers',()=>{
  const guilds=[{id:'a',installed:true},{id:'b',installed:true},{id:'c',installed:false}];assert.equal(preferredGuild('u',guilds,'b').id,'b');assert.equal(preferredGuild('u',guilds,'c').id,'a');assert.equal(preferredGuild('u',guilds,'unavailable').id,'a');
@@ -86,7 +86,7 @@ test('public atlas launch creates a new private guide without editing the shared
  const x=click('vex:atlas:start');x.message.flags=32768;wrapCommandInteraction(x);await atlasInteraction(x);assert.equal(x.ephemeral,true);validate(x.track.payload);assert.equal(x.vexCommandName,'commands');
 });
 test('official command panel uses valid native payloads and updates the same message across boots',async()=>{
- const registered=new Collection(catalogue.map(c=>[c.id,c])),payload=showcasePayload(registered);assert.ok(componentCount(payload.components)<=40);for(const container of payload.components.filter(c=>c.type===17))new ContainerBuilder(container).toJSON();assert.match(strings(payload.components),/44 command experiences/);
+ const registered=new Collection(catalogue.map(c=>[c.id,c])),payload=showcasePayload(registered);assert.ok(componentCount(payload.components)<=40);for(const container of payload.components.filter(c=>c.type===17))new ContainerBuilder(container).toJSON();assert.match(strings(payload.components),/45 command experiences/);
  let sends=0,edits=0;const message={id:'999999999999999999',author:{id:'bot'},flags:new MessageFlagsBitField(32768),edit:async()=>{edits++;return message;}},channel={id:channelId,type:0,name:'commands',messages:{fetch:async()=>message},send:async()=>{sends++;return message;}};
  const client={user:{id:'bot'},guilds:{cache:new Collection([['1557341885649920002',{id:'1557341885649920002',channels:{cache:new Collection([[channelId,channel]])}}]])}};
  assert.equal((await refreshCommandShowcase(client,registered)).native,true);await refreshCommandShowcase(client,registered);assert.equal(sends,1);assert.equal(edits,2);
@@ -115,5 +115,5 @@ test.after(()=>{db.close();fs.rmSync(process.env.DATA_DIR,{recursive:true,force:
 test('search pagination retains all matching results and binds tokens to owner, guild and expiry',async t=>{
  const {searchState}=await import('../src/command-atlas.js');const x=i(),first=atlasPage(x,{query:'Guide'}),next=first.components.at(-1).toJSON().components[2];assert.equal(next.disabled,false);const token=next.custom_id.split(':').at(-1).split(',')[2];assert.equal(searchState(x,token).query,'Guide');assert.throws(()=>searchState({...x,user:{id:target}},token),/expired/);assert.throws(()=>searchState({...x,guildId:'other'},token),/expired/);
  const names=[];let p=first;for(let page=0;page<3;page++){names.push(...p.components[1].toJSON().components[0].options.map(o=>o.value));const next=p.components.at(-1).toJSON().components[2];assert.ok(next.custom_id.length<=100);if(page<2){const y=click(next.custom_id);await atlasInteraction(y);p=y.track.payload;}}
- assert.equal(new Set(names).size,44);assert.equal(p.components.at(-1).toJSON().components[2].disabled,true);const now=Date.now();t.mock.method(Date,'now',()=>now+16*60000);assert.throws(()=>searchState(x,token),/expired/);
+ assert.equal(new Set(names).size,45);assert.equal(p.components.at(-1).toJSON().components[2].disabled,true);const now=Date.now();t.mock.method(Date,'now',()=>now+16*60000);assert.throws(()=>searchState(x,token),/expired/);
 });

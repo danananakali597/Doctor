@@ -1,10 +1,11 @@
+import {inspectSecurityAI,automatedResponses} from './security-suite.js';
 import {Events,AuditLogEvent as A,PermissionFlagsBits as P} from 'discord.js';
 import {settings,plan,event,getState,setState} from './db.js';
 import {entitled} from './catalog.js';
 import {WindowCounter,messageReasons} from './rules.js';
 import {buildLogEmbed} from './log-design.js';
 const counts=new WindowCounter(),cooldowns=new WindowCounter();
-export const active=(g,id,s=settings(g))=>entitled(plan(g),id)&&s.modules[id]?.enabled?s.modules[id]:null;
+/* VEX_SECURITY_UNIFIED_MODE */ export const active=(g,id,s=settings(g))=>{const c=entitled(plan(g),id)&&s.modules[id]?.enabled?s.modules[id]:null;if(!c)return null;if(s.securitySuite.mode==='paused'&&!['logs','joins','advancedLogs','owner','tamper','scanner','score'].includes(id))return null;return s.securitySuite.mode==='monitor'?{...c,action:'log'}:c;};
 export function trusted(member,s){return member.id===member.guild.ownerId||member.id===member.client.user.id||!!active(member.guild.id,'trust',s)&&(s.trustedUsers.includes(member.id)||member.roles.cache.some(r=>s.trustedRoles.includes(r.id)));}
 export async function record(g,kind,detail,significant=false){
  event(g.id,kind,detail);const s=settings(g.id);
@@ -36,17 +37,17 @@ export function permissionEscalation(entry){return(entry.changes||[]).some(c=>c.
 export function attachSecurity(client){
  const on=(name,fn)=>client.on(name,(...args)=>void Promise.resolve().then(()=>fn(...args)).catch(e=>console.error('Security handler:',name,e.message)));
  async function inspect(m,isEdit=false){
-  if(m.partial)m=await m.fetch();if(!m.guild||m.author?.bot||!m.content)return;
+  if(m.partial)m=await m.fetch();if(!m.guild||m.author?.bot||(!m.content&&!m.attachments?.size))return;
   const s=settings(m.guildId),member=m.member||await m.guild.members.fetch(m.author.id);if(trusted(member,s)||s.exemptChannels.includes(m.channelId)||member.roles.cache.some(r=>s.exemptRoles.includes(r.id)))return;
   const enabled=id=>isEdit&&id==='spam'?null:active(m.guildId,id,s);
   const reasons=messageReasons({guildId:m.guildId,userId:m.author.id,content:m.content,mentions:m.mentions.users.size+m.mentions.roles.size,everyone:m.mentions.everyone},enabled,counts);
-  if(!reasons.length)return;
-  const strength={log:0,delete:1,timeout:2};const id=reasons.sort((a,b)=>strength[s.modules[b].action]-strength[s.modules[a].action])[0],config=s.modules[id];
+  if(!reasons.length){await inspectSecurityAI(m,s,record);return;}
+  const strength={log:0,delete:1,timeout:2};const id=reasons.sort((a,b)=>strength[s.modules[b].action]-strength[s.modules[a].action])[0],config=enabled(id);
   if(cooldowns.hit(m.guildId+':msg:'+m.author.id,3).length>1)return;
   const outcomes=[];if(config.action==='delete'||config.action==='timeout'){try{await m.delete();outcomes.push('message deleted');}catch{outcomes.push('delete failed');}}
   if(config.action==='timeout'){try{if(!member.moderatable)throw Error();await member.timeout(config.timeoutMinutes*60000,'VEX '+reasons.join(', '));outcomes.push('timed out');}catch{outcomes.push('timeout failed');}}
   await record(m.guild,'message_violation',{actor:m.author.id,channel:m.channelId,rules:reasons.join(', '),result:outcomes.join('; ')||'logged'},true);
-  const risk=active(m.guildId,'risk',s);if(risk&&counts.hit(m.guildId+':risk:'+m.author.id,risk.window).length>=risk.limit){let result='permission denied';if(member.moderatable){await member.timeout(risk.timeoutMinutes*60000,'VEX repeated incidents');result='timed out';}await record(m.guild,'risk_escalation',{actor:m.author.id,result},true);}
+  const risk=active(m.guildId,'risk',s);if(automatedResponses(m.guildId)&&risk&&counts.hit(m.guildId+':risk:'+m.author.id,risk.window).length>=risk.limit){let result='permission denied';if(member.moderatable){await member.timeout(risk.timeoutMinutes*60000,'VEX repeated incidents');result='timed out';}await record(m.guild,'risk_escalation',{actor:m.author.id,result},true);}
  }
  on(Events.MessageCreate,m=>inspect(m));on(Events.MessageUpdate,(_before,after)=>inspect(after,true));
  on(Events.GuildMemberAdd,async m=>{
@@ -57,7 +58,7 @@ export function attachSecurity(client){
   const age=active(g.id,'age',s);if(age&&Date.now()-m.user.createdTimestamp<age.days*86400000)actions.push(['age',age]);
   const bot=active(g.id,'bots',s);if(m.user.bot&&bot)actions.push(['bots',bot]);
   if(!m.user.bot){for(const id of ['verification','quarantine']){const c=active(g.id,id,s);if(c)actions.push([id,{...c,action:'quarantine'}]);}}
-  if(!actions.length)return;const order={log:0,quarantine:1,kick:2};actions.sort((a,b)=>order[b[1].action]-order[a[1].action]);const[id,c]=actions[0];
+  if(!actions.length)return;if(!automatedResponses(g.id))for(const row of actions)row[1]={...row[1],action:'log'};const order={log:0,quarantine:1,kick:2};actions.sort((a,b)=>order[b[1].action]-order[a[1].action]);const[id,c]=actions[0];
   let result;try{result=c.action==='quarantine'?await hold(m,c.minutes||10,id):await memberResponse(m,c,id);}catch(e){result=e.message;}
   await record(g,'join_protection',{target:m.id,rules:actions.map(a=>a[0]).join(', '),result},true);
  });

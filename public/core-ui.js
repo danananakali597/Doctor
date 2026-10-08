@@ -1,6 +1,6 @@
 // Shared directory rules: every command has one settings destination.
 export const commandModule=name=>({
- logs:'serverlogs',vex:'commands',help:'commands',commands:'commands',security:'protection',scan:'insights',lockdown:'response',verify:'module:verification',
+ 'vex-security':'security-center',logs:'serverlogs',vex:'commands',help:'commands',commands:'commands',security:'protection',scan:'insights',lockdown:'response',verify:'module:verification',
  welcome:'community:welcome',rank:'community:levels',leaderboard:'community:levels',top:'community:levels',setxp:'community:levels',setlevel:'community:levels',resetxp:'community:levels',
  roles:'community:selfroles',colors:'community:selfroles',color:'community:selfroles',invite:'community:templinks',starboard:'community:starboard',ticket:'community:tickets',
  room:'community:tempvoice',moveme:'community:tempvoice',move:'community:tempvoice',vkick:'community:tempvoice',ask:'ai-chat','ai-security':'ai-security',
@@ -10,7 +10,7 @@ export function organizedNavigation(groups){
  const output=[['WORKSPACE',[]],['SECURITY',[]],['COMMUNITY',[]],['VOICE',[]],['SUPPORT & MODERATION',[]],['LOGS',[]],['AI & ENTERTAINMENT',[]],['WORKSPACE TOOLS',[]],['ACCOUNT',[]]];
  const seen=new Set();
  for(const [,items]of groups)for(const item of items){const id=item[0];if(seen.has(id))continue;seen.add(id);
-  const n=['protection','access','response','insights','ai-security'].includes(id)?1:['community:welcome','community:goodbye','community:templinks','community:responder','community:autoroles','community:levels','community:selfroles','community:starboard','community:statistics'].includes(id)?2:id==='community:tempvoice'?3:['community:tickets','community:moderation'].includes(id)?4:['serverlogs','monitoring','panellogs'].includes(id)?5:['ai','ai-chat','community:cinema','community:games','community:notifications'].includes(id)?6:['inbox','history','team','appearance'].includes(id)?7:id==='plans'?8:0;
+  const n=['security-center','protection','access','response','insights','ai-security'].includes(id)?1:['community:welcome','community:goodbye','community:templinks','community:responder','community:autoroles','community:levels','community:selfroles','community:starboard','community:statistics'].includes(id)?2:id==='community:tempvoice'?3:['community:tickets','community:moderation'].includes(id)?4:['serverlogs','monitoring','panellogs'].includes(id)?5:['ai','ai-chat','community:cinema','community:games','community:notifications'].includes(id)?6:['inbox','history','team','appearance'].includes(id)?7:id==='plans'?8:0;
   output[n][1].push(item);
  }
  if(!seen.has('commands'))output[0][1].push(['commands','⌘','Command center']);
@@ -19,7 +19,7 @@ export function organizedNavigation(groups){
 }
 export function dashboardRoute(raw,data){
  if(typeof raw!=='string')return 'overview';
- const standard=['operator','overview','commands','setup','incidents','automations','backups','community','protection','serverlogs','monitoring','panellogs','access','response','insights','plans','inbox','history','team','appearance'];
+ const standard=['security-center','operator','overview','commands','setup','incidents','automations','backups','community','protection','serverlogs','monitoring','panellogs','access','response','insights','plans','inbox','history','team','appearance'];
  if(standard.includes(raw))return raw;
  if(raw.startsWith('community:')&&data.communityModules.some(m=>'community:'+m.id===raw))return raw;
  if(raw.startsWith('module:')&&data.modules.some(m=>'module:'+m.id===raw))return raw;

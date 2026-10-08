@@ -156,3 +156,58 @@ and hashes are never included. `/api/operator/subscriptions` enforces authentica
 application ownership independently of navigation; a server administrator or owner
 cannot access it. Inventory access does not require management access to every
 listed guild. Active access is not represented as a verified payment.
+
+### Unified AI Security center
+
+Open **AI Security** (`/?section=security-center`) or `/vex-security view:status`.
+Seven tabs group the existing message filters, join/raid guards, audit-based
+server protection, exclusions, incidents and OpenAI spending controls. Rule
+changes use the dashboard's existing Save/Discard workflow. Only the guild owner
+can change the unified mode and AI policy. Existing subscriptions are preserved:
+local modules retain their tier and provider content checks require Ultimate.
+
+`monitor` records matches without automated security punishments; `enforce`
+applies the saved per-rule responses; `paused` stops this suite's automated
+protection. Explicit moderator commands and separate community automations are
+not disabled by this switch. Existing local configuration keeps its enforcement
+behavior on upgrade; new AI content processing starts disabled and review-only.
+
+Set `OPENAI_API_KEY` securely in the server environment. Moderation uses
+`omni-moderation-latest`; optional paid borderline/custom-policy review uses
+`gpt-4.1-mini`. Text/image sharing and sharing up to three prior channel messages
+are owner-controlled, separate opt-ins. Image checks accept at most two
+Discord-hosted images, each up to 20 MB. Never send known or suspected CSAM to
+this endpoint; handle it via dedicated child-safety reporting procedures.
+
+Paid calls need BOTH an owner-configured per-guild budget and an operator-set
+`VEX_SECURITY_AI_MONTHLY_BUDGET_USD` shared across all guilds. The operator default
+is **0**, so deployment alone starts no paid calls. Daily review and minute check
+limits also apply. SQLite transactions reserve a conservative UTF-8-token cost
+bound before each paid call, then settle actual usage at $0.40/1M input and
+$1.60/1M output tokens (rates checked 2026-10-08). An ambiguous network failure
+keeps the reservation because the provider might have billed it. Accounting is
+persistent and resets by UTC calendar month/day; it is not a provider invoice.
+These caps cover this suite only, not existing AI Chat or legacy providers.
+A short-lived bounded cache deduplicates checks within each guild. Provider
+errors/budget exhaustion never create an AI punishment; local rules continue.
+
+Moderation signals are not calibrated probabilities. Test Kurdish, Arabic and
+English server examples in monitor mode before enabling deletion/timeouts.
+AI receives no Discord tools. Discord permissions and hierarchy still apply;
+images do not support every harm category and account age is not proof of a
+fake account. There is no live threat-reputation feed in this implementation.
+
+Incident reviews can mark false positives or resolve cases. Timeout release
+requires current moderation permission, hierarchy and an unchanged timeout
+created by this suite. Deleted messages cannot be restored. No raw message body
+or attachment URL is stored in the persistent incident record; provider reasons
+are bounded to 300 characters. The local classification cache stores hashes and
+results rather than message text.
+
+The versioned installer runs after legacy compatibility patches and fails if an
+expected integration point is missing, rather than silently omitting controls.
+Before production rollout, validate against the actual sealed installer output
+and disable/migrate any separately installed legacy AI Security listener: this
+suite cannot promise to govern an unknown external listener. Mock-provider,
+configuration, budget, UI and race-condition tests run in `npm test`. Live
+OpenAI/Discord behavior must be verified after credentials are configured.

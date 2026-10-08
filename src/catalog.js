@@ -1,3 +1,4 @@
+import {securitySuiteDefaults,validateSecuritySuite} from './security-suite-config.js';
 import {communityDefaults,validateCommunity} from './community-catalog.js';
 import {logDefaults,validateLogs} from './log-catalog.js';
 export const tiers=['basic','plus','ultimate'];
@@ -46,13 +47,14 @@ module('risk','Advanced Risk Rules','ultimate','Escalate repeated incidents by o
 ];
 export const byId=Object.fromEntries(modules.map(m=>[m.id,m]));
 export function entitled(plan,id){return !!byId[id]&&tiers.indexOf(plan)>=tiers.indexOf(byId[id].tier);}
-export function defaults(){return {community:communityDefaults(),logsChannelId:'',activityLogs:logDefaults(),commandRules:{},exemptRoles:[],exemptChannels:[],trustedUsers:[],trustedRoles:[],protectedRoles:[],protectedChannels:[],lockdownChannels:[],modules:Object.fromEntries(modules.map(m=>[m.id,{enabled:['logs','joins'].includes(m.id),...Object.fromEntries(m.fields.map(f=>[f.key,f.value]))}]))};}
+export function defaults(){return {securitySuite:securitySuiteDefaults(),community:communityDefaults(),logsChannelId:'',activityLogs:logDefaults(),commandRules:{},exemptRoles:[],exemptChannels:[],trustedUsers:[],trustedRoles:[],protectedRoles:[],protectedChannels:[],lockdownChannels:[],modules:Object.fromEntries(modules.map(m=>[m.id,{enabled:['logs','joins'].includes(m.id),...Object.fromEntries(m.fields.map(f=>[f.key,f.value]))}]))};}
 const ids=v=>Array.isArray(v)&&v.length<=100&&v.every(i=>typeof i==='string'&&/^\d{17,22}$/.test(i));
 export function validatePatch(p,plan,owner=false){
  if(!p||typeof p!=='object'||Array.isArray(p))throw Error('Invalid settings');
  const out={};
  for(const [k,v]of Object.entries(p)){
-  if(k==='logsChannelId'){if(typeof v!=='string'||!/^\d{17,22}$|^$/.test(v))throw Error('Invalid log channel');out[k]=v;}
+  if(k==='securitySuite'){out.securitySuite=validateSecuritySuite(v,owner);if(out.securitySuite.ai?.enabled===true&&plan!=='ultimate')throw Error('AI Security requires Ultimate access');}
+  else if(k==='logsChannelId'){if(typeof v!=='string'||!/^\d{17,22}$|^$/.test(v))throw Error('Invalid log channel');out[k]=v;}
   else if(k==='community')out.community=validateCommunity(v);
   else if(k==='activityLogs')out.activityLogs=validateLogs(v);
   else if(k==='commandRules')out.commandRules=v;
