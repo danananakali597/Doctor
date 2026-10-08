@@ -25,5 +25,7 @@ const {attachCommandExperience}=await import('./command-experience.js');
 attachCommandExperience(client);
 const {auditSubscriptionIsolation}=await import('./subscription-diagnostics.js');
 auditSubscriptionIsolation();
+const {attachTierBranding}=await import('./tier-branding.js');
+attachTierBranding(client);
 startWeb();
 startBot().catch(e=>{console.error('Bot login failed:',e);process.exit(1);});
