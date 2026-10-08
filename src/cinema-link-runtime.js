@@ -55,6 +55,12 @@ export function integrateCinemaDirectPlayer(source){
  source=source.replace('function cancelKc(){','function cancelKc(){cinemaMediaCleanup?.();cinemaMediaCleanup=null;');
  source=source.replace("const chosen=(location.hostname===cinemaDiscordHost?(data.servers||[]).find(x=>/vidmoly/i.test(x.label||'')):null)||(data.servers||[]).find(x=>x.selected)","const chosen=(data.servers||[]).find(x=>x.selected)");
  source=source.replace('await loadServer(chosen.id);','await loadServer();');
+ source=source.replace("if(active&&isKurdCinemaUrl(session.mediaUrl)){", "if(active&&isKurdCinemaUrl(session.mediaUrl)&&playerMode!=='video'){");
+ source=source.replace("$('syncBadge').textContent='EXTERNAL PLAYER';", "$('syncBadge').textContent=playerMode==='unavailable'?'SOURCE UNAVAILABLE':'LOADING VIDEO';");
+ source=source.replace("$('stateText').textContent='Provider playback';", "$('stateText').textContent=playerMode==='unavailable'?'Source unavailable':'Waiting for video';");
+ source=source.replace("$('timeNow').textContent=playerMode==='provider'?'—':fmt(pos);", "$('timeNow').textContent=playerMode==='video'&&player?.readyState>=2?fmt(player.currentTime):'—';");
+ source=source.replace("$('trackFill').style.width=(playerMode==='provider'?0:width)+'%';", "$('trackFill').style.width=(playerMode==='video'&&player?.readyState>=2?Math.min(100,player.currentTime/player.duration*100)||0:0)+'%';");
+ source=source.replaceAll("stage.innerHTML='';const msg=document.createElement('div');", "player=null;playerMode='unavailable';stage.innerHTML='';const msg=document.createElement('div');");
  // Stop an earlier player before a server switch starts its asynchronous lookup.
  source=source.replace('const request=++kcServerSeq;',"const request=++kcServerSeq;cinemaMediaCleanup?.();cinemaMediaCleanup=null;player=null;playerMode='';");
  return "/* VEX_CINEMA_DIRECT_MEDIA */ import {attachCinemaMedia,activityStreamUrl} from './cinema-media-player.js?v=1';\nlet cinemaMediaCleanup=null;\n"+source;
