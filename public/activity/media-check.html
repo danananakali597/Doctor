@@ -1,0 +1,10 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>VEX Cinema video test</title></head>
+<body><h1>VEX Cinema video test</h1><p>Check real video playback through the Activity origin.</p>
+<label>Movie ID <input id="movieid" inputmode="numeric" maxlength="10" value="19765"></label>
+<button id="resolve" type="button">Extract movie video</button>
+<button id="mp4" type="button">Play MP4 sample</button>
+<button id="hls" type="button">Play HLS sample</button>
+<p id="result" role="status">Choose a movie or a playback sample.</p>
+<video id="video" controls playsinline preload="metadata" width="960" height="540" aria-label="VEX video player"></video>
+<script type="module" src="./cinema-media-check.js?v=1"></script></body></html>
