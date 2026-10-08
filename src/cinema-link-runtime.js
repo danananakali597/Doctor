@@ -44,5 +44,5 @@ export function installCinemaLinks(){
  const dir=path.join(root,'public/activity');if(!fs.existsSync(dir))return;
  fs.copyFileSync(path.join(root,'public/cinema-provider.js'),path.join(dir,'cinema-provider.js'));
  for(const name of fs.readdirSync(dir).filter(n=>/^app(?:-v\d+)?\.js$/.test(n))){const file=path.join(dir,name),before=fs.readFileSync(file,'utf8'),after=integrateCinemaMappedPlayer(integrateCinemaPlayer(before));if(before!==after)fs.writeFileSync(file,after);}
- const index=path.join(dir,'index.html');if(fs.existsSync(index)){const html=fs.readFileSync(index,'utf8');const next=html.replace(/(src=['"]\.\/)(app(?:-v\d+)?\.js)(?:\?[^'"]*)?(['"])/g,(_m,prefix,name,quote)=>{const file=path.join(dir,name);if(!fs.existsSync(file))throw Error('Cinema script unavailable: '+name);return prefix+name+'?v='+crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0,12)+quote;});fs.writeFileSync(index,next);}
+ const index=path.join(dir,'index.html');if(fs.existsSync(index)){const html=fs.readFileSync(index,'utf8');const next=html.replace(/(src=['"]\.\/)(app(?:-v\d+)?\.js)(?:\?[^'"]*)?(['"])/g,(match,prefix,name,quote)=>{const file=path.join(dir,name);if(!fs.existsSync(file))return match;return prefix+name+'?v='+crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0,12)+quote;});fs.writeFileSync(index,next);}
 }
