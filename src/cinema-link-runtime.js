@@ -22,8 +22,15 @@ export function integrateCinemaPlayer(source){
  source=source.replace("$('trackFill').style.width=width+'%';","$('trackFill').style.width=(playerMode==='provider'?0:width)+'%';");
  return source;
 }
+export function integrateCinemaDashboard(source){
+ if(source.includes('/* VEX_CINEMA_DASHBOARD */'))return source;
+ const anchor="else if(page.startsWith('community:'))";
+ if(!source.includes(anchor))throw Error('Cinema dashboard integration: community routing unavailable');
+ return "import {cinemaDashboard} from './cinema-dashboard.js';\n"+source.replace(anchor,"/* VEX_CINEMA_DASHBOARD */ else if(page==='community:cinema'){ $('pageTitle').textContent=t('Cinema');$('pageDescription').textContent=t('Choose a movie. Watch together in Discord.');$('breadcrumb').textContent=t('Cinema');cinemaDashboard(root,{h,raw,t,api,data,commandPanel:(panel,names,title)=>commandsUI({h,raw,data,patch,mark,names,title})(panel)});} "+anchor);
+}
 export function installCinemaLinks(){
  const web=path.join(root,'src/web.js');fs.writeFileSync(web,integrateCinemaWeb(fs.readFileSync(web,'utf8')));
+ const dashboard=path.join(root,'public/app.js');fs.writeFileSync(dashboard,integrateCinemaDashboard(fs.readFileSync(dashboard,'utf8')));
  const dir=path.join(root,'public/activity');if(!fs.existsSync(dir))return;
  for(const name of fs.readdirSync(dir).filter(n=>/^app(?:-v\d+)?\.js$/.test(n))){const file=path.join(dir,name),before=fs.readFileSync(file,'utf8'),after=integrateCinemaPlayer(before);if(before!==after)fs.writeFileSync(file,after);}
 }
