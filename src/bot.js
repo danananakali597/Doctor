@@ -1,3 +1,4 @@
+import {securitySuiteInteraction} from './security-suite-commands.js';
 import {deferPrivate,respondPrivate} from './interaction-response.js';
 import {attachCommunity,communityInteraction} from './community.js';
 import {startNotifications} from './notifications.js';
@@ -36,6 +37,7 @@ client.on(Events.InteractionCreate,async i=>{
   try{const actor=await i.guild.members.fetch({user:i.user.id,force:true});const reason=commandAccess(i.guildId,i.commandName,actor,i.channel);if(reason){await respondPrivate(i,{content:`⚠️ ${reason}`,flags:64});return;}}
   catch(e){console.warn('Command access check failed',e.code||e.message);await respondPrivate(i,{content:'Could not verify command access. Please try again.',flags:64}).catch(()=>{});return;}
  }
+ try{if(await securitySuiteInteraction(i))return;}catch(e){await i.editReply({content:e.message,allowedMentions:{parse:[]}}).catch(()=>{});return;}
  try{if(await communityInteraction(i))return;}catch(e){console.warn('Community interaction failed',e.code||e.name);return;}
  try{if(await extraInteraction(i))return;}catch(e){console.warn('Command interaction failed',e.code||e.name);return;}
  if(i.isButton()&&i.customId.startsWith('vex:help:')){const page=i.customId.slice('vex:help:'.length);if(!pages[page])return;try{await i.update(helpCard(i.guildId,page));}catch(e){console.error('Help navigation:',e.message);}return;}

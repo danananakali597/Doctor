@@ -1,5 +1,5 @@
 export const logPalette=Object.freeze({normal:'#3498db',warning:'#f39c12',danger:'#e74c3c'});
-const warnings=new Set(['message_deleted','messages_bulk_deleted','member_kicked','members_pruned','timeout_given','channel_deleted','channel_permissions_changed','role_deleted','webhook_created','webhook_updated','webhook_deleted','automod_rule_deleted','message_violation','join_protection','voice_spam','security_configuration_changed']);
+const warnings=new Set(['message_deleted','messages_bulk_deleted','member_kicked','members_pruned','timeout_given','channel_deleted','channel_permissions_changed','role_deleted','webhook_created','webhook_updated','webhook_deleted','automod_rule_deleted','message_violation','ai_security_violation','join_protection','voice_spam','security_configuration_changed']);
 const dangers=new Set(['member_banned','security_incident','risk_escalation','bot_roles_changed','bot_removed','emergency_lockdown']);
 export function logSeverity(id,details={},significant=false){
  if(dangers.has(id))return 'danger';

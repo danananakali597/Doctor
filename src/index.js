@@ -1,3 +1,4 @@
+import {installSecuritySuite} from './security-suite-runtime.js';
 import {installCommandRuntime} from './command-runtime.js';
 import {installExperienceRuntime} from './experience-runtime.js';
 import {installGiftRuntime} from './gift-runtime.js';
@@ -10,6 +11,7 @@ installCommandRuntime();
 installGiftRuntime();
 installExperienceRuntime();
 installProductRuntime();
+installSecuritySuite();
 const {startWeb}=await import('./web.js');
 const {client,startBot}=await import('./bot.js');
 // These are bounded, once-only lifecycle hooks for the installed integrations.
