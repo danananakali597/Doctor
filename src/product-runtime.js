@@ -19,7 +19,7 @@ export function integrateProductWeb(s,aiPaths=[]){
  // This middleware is registered before every legacy AI route. Read-only status
  // remains available; all provider/configuration actions require Ultimate.
  if(!s.includes('VEX_AI_ULTIMATE_GATE')){
- const paths=JSON.stringify(aiPaths);s=s.replace("app.use(express.json({limit:'128kb'}));",()=>`app.use(express.json({limit:'128kb'}));\n/* VEX_AI_ULTIMATE_GATE */ app.use((req,res,next)=>{const m=req.path.match(/^\\/api\\/guilds\\/(\\d{17,22})\\/(.*)$/);if(m&&(/(?:^|\\/)(?:ai|ai-chat|ai-security|security-ai|ask)(?:\\/|$)/.test(m[2])||${paths}.some(p=>new RegExp('^'+p.replace(/:[a-zA-Z]+/g,'[^/]+')+'$').test(req.path)))&&req.method!=='GET'&&!hasFeature(plan(m[1]),'aiChat'))return res.status(403).json({error:'This feature requires Ultimate access in this server.'});next();});`);
+ const paths=JSON.stringify(aiPaths);s=s.replace("app.use(express.json({limit:'128kb'}));",()=>`app.use(express.json({limit:'128kb'}));\n/* VEX_AI_ULTIMATE_GATE */ app.use((req,res,next)=>{const m=req.path.match(/^\\/api\\/guilds\\/(\\d{17,22})\\/(.*)$/);if(m&&(/(?:^|\\/)(?:ai|ai-chat|ai-security|security-ai|ask)(?:\\/|$)/.test(m[2])||${paths}.some(p=>new RegExp('^'+p.replace(/:[a-zA-Z]+/g,'[^/]+')+'$').test(req.path)))&&req.method!=='GET')return auth(req,res,()=>{if(!hasFeature(plan(m[1]),'aiChat'))return res.status(403).json({error:'This feature requires Ultimate access in this server.'});next();});next();});`);
  }
  if(!s.includes('VEX_AI_ULTIMATE_GATE')||!s.includes('attachGrowthRoutes(app,'))throw Error('Product web integration point unavailable');return s;
 }

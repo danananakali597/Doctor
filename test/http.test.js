@@ -95,6 +95,6 @@ test('workspace routes enforce authentication, fresh ownership, CSRF, plan gates
  assert.equal((await request('/backups/schedule','PUT',{enabled:true,hours:24},own)).status,400);
  assert.equal((await request('/setup','POST',{confirm:'wrong'},own)).status,400);
  assert.equal((await request('/setup','POST',{confirm:'Test',enableWelcome:false,sayHi:false},own)).status,200);
- grant(id,'plus',Date.now()+60000);assert.equal((await fetch(base+'/api/guilds/'+id+'/ai/chat',{method:'POST',headers:{...headers,...own},body:'{}'})).status,403);
+ grant(id,'plus',Date.now()+60000);assert.equal((await fetch(base+'/api/guilds/'+id+'/ai/chat',{method:'POST',headers:{'content-type':'application/json'},body:'{}'})).status,401);assert.equal((await fetch(base+'/api/guilds/'+id+'/ai/chat',{method:'POST',headers:{...headers,...own},body:'{}'})).status,403);
  member.id='user';
 });

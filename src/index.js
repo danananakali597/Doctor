@@ -12,6 +12,8 @@ installExperienceRuntime();
 installProductRuntime();
 const {startWeb}=await import('./web.js');
 const {client,startBot}=await import('./bot.js');
+// These are bounded, once-only lifecycle hooks for the installed integrations.
+client.setMaxListeners(Math.max(client.getMaxListeners(),20));
 const {attachTicketRefresh,attachTicketInteractions}=await import('./tickets.js');
 attachTicketRefresh(client);
 attachTicketInteractions(client);
