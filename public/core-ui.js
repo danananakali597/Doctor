@@ -19,7 +19,7 @@ export function organizedNavigation(groups){
 }
 export function dashboardRoute(raw,data){
  if(typeof raw!=='string')return 'overview';
- const standard=['operator','overview','commands','setup','incidents','automations','backups','community','protection','serverlogs','monitoring','panellogs','access','response','insights','plans','inbox','history','team','appearance'];
+ const standard=['operator','overview','commands','setup','incidents','automations','backups','community','community:cinema','protection','serverlogs','monitoring','panellogs','access','response','insights','plans','inbox','history','team','appearance'];
  if(standard.includes(raw))return raw;
  if(raw.startsWith('community:')&&data.communityModules.some(m=>'community:'+m.id===raw))return raw;
  if(raw.startsWith('module:')&&data.modules.some(m=>'module:'+m.id===raw))return raw;
