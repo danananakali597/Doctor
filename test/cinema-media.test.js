@@ -20,6 +20,12 @@ test('unsafe addresses and private networks cannot become media requests',()=>{
  for(const address of ['10.0.0.1','127.0.0.1','169.254.169.254','172.16.0.1','192.168.1.1','100.64.0.1','198.18.0.1','203.0.113.1','224.0.0.1','::1'])assert.equal(publicIPv4(address),false,address);
  assert.equal(publicIPv4('8.8.8.8'),true);
 });
+test('plain JW Player source declarations are read without evaluating JavaScript',()=>{
+ const html=`<script>var unrelated="https://cdn.example.com/sample.mp4";jwplayer("vplayer").setup({sources:[{file:"https://cdn.example.com/actual.m3u8",type:"hls"}],image:"poster.jpg"});</script>`;
+ assert.deepEqual(declaredMedia(html,'https://vidmoly.org/embed-example.html'),[{url:'https://cdn.example.com/actual.m3u8',format:'hls'}]);
+ assert.deepEqual(declaredMedia('<script>eval("jwplayer(\\"vplayer\\").setup({sources:[{file:encrypted}]})")</script>','https://vidmoly.org/'),[]);
+ assert.deepEqual(declaredMedia('<script>eval(`jwplayer("vplayer").setup({sources:[{file:"https://cdn.example.com/packed.mp4"}]})`)</script>','https://vidmoly.org/'),[]);
+});
 test('DNS checks bind the connection to the inspected public address',async()=>{
  let connections=0;
  const request=(_url,options,callback)=>{connections++;options.lookup('changed.example.com',{},(err,address,family)=>{assert.equal(err,null);assert.equal(address,'8.8.8.8');assert.equal(family,4);});assert.equal(options.agent,false);assert.deepEqual(options.headers,{});const req=new EventEmitter();req.setTimeout=()=>{};req.end=()=>callback(response('page'));return req;};

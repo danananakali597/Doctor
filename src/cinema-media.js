@@ -67,6 +67,20 @@ export function declaredMedia(html,pageUrl){
  for(const match of html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script\s*>/gi)){
   try{const data=JSON.parse(match[1]);const items=Array.isArray(data)?data:[data,...(data['@graph']||[])];for(const item of items)if(item&&[item['@type']].flat().includes('VideoObject'))add(item.contentUrl,item.encodingFormat||'');}catch{}
  }
+ // Plain JW Player source declarations are data, not executable extractors.
+ // Ignore unrelated variables and packed/encrypted player scripts entirely.
+ const plainScripts=[...html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi)].map(match=>match[1]).filter(script=>!/\b(?:eval|atob|Function)\s*\(/.test(script));
+ for(const script of plainScripts)for(const match of script.matchAll(/\bjwplayer\s*\([^)]{1,200}\)\s*\.setup\s*\(\s*\{([\s\S]{0,50000}?)\}\s*\)/gi)){
+  for(const sources of match[1].matchAll(/(?:["']?sources["']?)\s*:\s*\[([^\]]{1,20000})\]/gi)){
+   for(const item of sources[1].matchAll(/\{([^{}]{1,6000})\}/g)){
+    const file=item[1].match(/(?:["']?file["']?)\s*:\s*(["'])([^"'\\]*(?:\\.[^"'\\]*)*)\1\s*(?=[,}]|$)/i);
+    if(!file)continue;
+    let value=file[2];try{if(file[1]==='"')value=JSON.parse('"'+value+'"');else value=value.replace(/\\\//g,'/');}catch{continue;}
+    const type=item[1].match(/(?:["']?type["']?)\s*:\s*["']([^"']+)["']/i)?.[1]||'';
+    add(value,/^hls$/i.test(type)?'application/vnd.apple.mpegurl':type);
+   }
+  }
+ }
  return results;
 }
 export function rewriteHls(manifest,base,tokenFor){
