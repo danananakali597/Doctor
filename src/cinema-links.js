@@ -12,7 +12,7 @@ export function cinemaLinkMiddleware(req,_res,next){
  // Existing Cinema routes still perform their authentication and validation.
  if(/^\/activity\/api\/kc\/(resolve|server)(?:\?|$)/.test(req.url)){
   const u=new URL(req.url,'https://vex.invalid');
-  if(u.searchParams.getAll('url').length===1){const old=u.searchParams.get('url'),normalized=normalizeCinemaLink(old);if(normalized!==old){u.searchParams.set('url',normalized);req.url=u.pathname+u.search;}}
+  if(u.searchParams.getAll('url').length===1){const old=u.searchParams.get('url'),normalized=normalizeCinemaLink(old);if(normalized!==old){u.searchParams.set('url',normalized);req.url=u.pathname+u.search;if(req.query&&Object.hasOwn(req.query,'url'))req.query.url=normalized;}}
  }
  if(/^\/activity\/api\/session\/(claim|control)(?:\?|$)/.test(req.url)&&req.body&&typeof req.body==='object'&&!Array.isArray(req.body))req.body.mediaUrl=normalizeCinemaLink(req.body.mediaUrl);
  next();

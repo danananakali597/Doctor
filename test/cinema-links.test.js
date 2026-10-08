@@ -16,8 +16,11 @@ test('middleware normalizes resolver and session inputs without changing permiss
  const body={mediaUrl:link,guild_id:'guild',instance_id:'instance'};cinemaLinkMiddleware({url:'/activity/api/session/claim',body},{},()=>{});assert.equal(body.mediaUrl,normalizeCinemaLink(link));assert.equal(body.guild_id,'guild');
  const unrelated={url:'/auth/login?url='+encodeURIComponent(link)};const before=unrelated.url;cinemaLinkMiddleware(unrelated,{},()=>{});assert.equal(unrelated.url,before);
 });
-test('runtime installs once and places normalization after JSON parsing',()=>{
- const s=fs.readFileSync(new URL('../src/web.js',import.meta.url),'utf8'),patched=integrateCinemaWeb(s);assert.equal(integrateCinemaWeb(patched),patched);assert.ok(patched.indexOf('app.use(cinemaLinkMiddleware)')>patched.indexOf('app.use(express.json'));assert.throws(()=>integrateCinemaWeb('wrong runtime'));
+test('runtime normalizes queries before legacy routes and bodies after JSON parsing',()=>{
+ const s=fs.readFileSync(new URL('../src/web.js',import.meta.url),'utf8'),patched=integrateCinemaWeb(s);assert.equal(integrateCinemaWeb(patched),patched);assert.ok(patched.indexOf('app.use(cinemaLinkMiddleware)')<patched.indexOf('app.use(express.json'));assert.ok(patched.lastIndexOf('app.use(cinemaLinkMiddleware)')>patched.indexOf('app.use(express.json'));assert.throws(()=>integrateCinemaWeb('wrong runtime'));
+});
+test('cached query objects used by legacy Express routes are normalized',()=>{
+ const link='https://kurdcinama.com/moves-details.aspx?movieid=19756',query={url:link,serverId:'77511'},req={url:'/activity/api/kc/server?'+new URLSearchParams(query),query};cinemaLinkMiddleware(req,{},()=>{});assert.equal(query.url,normalizeCinemaLink(link));assert.equal(query.serverId,'77511');
 });
 test('player gains an official fallback without claiming synchronization',()=>{
  const s="async function kcLoadMovieServers(movieUrl){bar.append(label,select,retry);const pos=expectedPosition(session);$('timeNow').textContent=fmt(pos);$('trackFill').style.width=width+'%';}";

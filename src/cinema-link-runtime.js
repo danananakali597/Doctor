@@ -5,8 +5,11 @@ const root=path.join(path.dirname(fileURLToPath(import.meta.url)),'..');
 export function integrateCinemaWeb(source){
  if(source.includes('/* VEX_CINEMA_LINKS */'))return source;
  const anchor=/app\.use\(express\.json\(\{limit:'128kb'\}\)\);/;
- if(!anchor.test(source))throw Error('Cinema link integration: JSON middleware unavailable');
- return "import {cinemaLinkMiddleware} from './cinema-links.js';\n"+source.replace(anchor,s=>s+'\n/* VEX_CINEMA_LINKS */ app.use(cinemaLinkMiddleware);');
+ const creation=/((?:export )?const app=express\(\);)/;
+ if(!anchor.test(source)||!creation.test(source))throw Error('Cinema link integration: application or JSON middleware unavailable');
+ // Legacy resolver routes can be attached before the main JSON middleware.
+ // Normalize query strings immediately; normalize session bodies after parsing.
+ return "import {cinemaLinkMiddleware} from './cinema-links.js';\n"+source.replace(creation,s=>s+'\n/* VEX_CINEMA_LINKS */ app.use(cinemaLinkMiddleware);').replace(anchor,s=>s+'\napp.use(cinemaLinkMiddleware);');
 }
 export function integrateCinemaPlayer(source){
  if(source.includes('/* VEX_CINEMA_FALLBACK */'))return source;
