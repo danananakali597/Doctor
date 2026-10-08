@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import {execFileSync} from 'node:child_process';
+import {installCinemaLinks} from '../src/cinema-link-runtime.js';
 const stage=(name,fn)=>{fn();console.log('VEX_BOOTSTRAP_STAGE',JSON.stringify({name,ok:true}));};
 const temp=fs.mkdtempSync(path.join(os.tmpdir(),'vex-bootstrap-'));
 function installer(key,base64=false){if(!process.env[key])return;const file=path.join(temp,key+'.cjs');fs.writeFileSync(file,base64?Buffer.from(process.env[key],'base64'):process.env[key],{mode:0o600});try{execFileSync(process.execPath,[file],{stdio:'inherit'});}finally{fs.rmSync(file,{force:true});}}
@@ -17,6 +18,7 @@ try{
  if(process.env.VEX_INVALID_BUTTON_EMOJI_RECOVERY_SOURCE){const {REST}=await import('discord.js');stage('discord-emoji-compatibility',()=>new Function('REST',process.env.VEX_INVALID_BUTTON_EMOJI_RECOVERY_SOURCE)(REST));}
  stage('discord-oauth-compatibility',()=>installer('VEX_DASHBOARD_CONNECTION_PATCH_SOURCE'));
  stage('advanced-security-compatibility',()=>installer('VEX_SECURITY_ADVANCED_INSTALL_SOURCE'));
+ stage('cinema-links',()=>installCinemaLinks());
  await import('../src/index.js');
  const files=fs.readdirSync('src').filter(f=>f.endsWith('.js')).map(f=>({path:'src/'+f,sha256:crypto.createHash('sha256').update(fs.readFileSync('src/'+f)).digest('hex')}));
  const directory=process.env.DATA_DIR||'./data';fs.mkdirSync(directory,{recursive:true});fs.writeFileSync(path.join(directory,'runtime-manifest.json'),JSON.stringify({version:5,at:Date.now(),files},null,2),{mode:0o600});
