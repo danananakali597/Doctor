@@ -144,3 +144,15 @@ installers remain execution-only compatibility stages, followed by repository-ow
 policy and syntax checks. A hash-only runtime manifest and read-only product audit record
 which integration ran. This is consolidated orchestration, not a claim that all legacy
 installer source has been moved into the repository.
+
+### Private VEX management
+
+`/?section=operator` is visible only to the Discord application owner. It includes
+private one-month gift key issuance and `/?section=operator&tab=servers`, a read-only
+inventory of connected guilds and historical entitlement records. Inventory shows
+server names/IDs, owner IDs, member/channel/role counts when available, effective
+plans, expiry, last recorded activity, and gift/manual/free sources. Gift secrets
+and hashes are never included. `/api/operator/subscriptions` enforces authenticated
+application ownership independently of navigation; a server administrator or owner
+cannot access it. Inventory access does not require management access to every
+listed guild. Active access is not represented as a verified payment.

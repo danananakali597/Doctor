@@ -22,3 +22,4 @@ test('operator sees private controls and minting displays the new secret once',a
  root.remove();
 });
 test.after(()=>{window.close();delete globalThis.document;});
+test('private owner page displays minting without the public redemption panel',()=>{const root=h('div');document.body.append(root);giftKeysUI(root,{h,button,api:async()=>({keys:[]}),toast:()=>{},refresh:()=>{},guildId:'guild',operator:true,date:String,redeemEnabled:false});assert.ok(root.textContent.includes('Private gift keys'));assert.equal(root.textContent.includes('Activate a gift key'),false);root.remove();});

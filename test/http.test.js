@@ -98,3 +98,10 @@ test('workspace routes enforce authentication, fresh ownership, CSRF, plan gates
  grant(id,'plus',Date.now()+60000);assert.equal((await fetch(base+'/api/guilds/'+id+'/ai/chat',{method:'POST',headers:{'content-type':'application/json'},body:'{}'})).status,401);assert.equal((await fetch(base+'/api/guilds/'+id+'/ai/chat',{method:'POST',headers:{...headers,...own},body:'{}'})).status,403);
  member.id='user';
 });
+test('VEX owner inventory is inaccessible to ordinary users and server owners, even by direct URL',async()=>{
+ client.application={owner:{id:'app-owner'}};
+ const url=base+'/api/operator/subscriptions';assert.equal((await fetch(url)).status,401);assert.equal((await fetch(url,{headers})).status,403);
+ const serverOwnerSid='inventory-server-owner';setSession(crypto.createHash('sha256').update(serverOwnerSid).digest('hex'),{user:{id:'owner'},csrf,guilds:[]},Date.now()+60000);assert.equal((await fetch(url,{headers:{...headers,cookie:'sid='+serverOwnerSid}})).status,403);
+ const operatorSid='inventory-vex-owner';setSession(crypto.createHash('sha256').update(operatorSid).digest('hex'),{user:{id:'app-owner'},csrf,guilds:[]},Date.now()+60000);
+ grant(id,'plus',Date.now()+60000);const r=await fetch(url,{headers:{...headers,cookie:'sid='+operatorSid}});assert.equal(r.status,200);const inventory=await r.json();assert.equal(inventory.paymentConnected,false);assert.equal(inventory.servers.find(s=>s.id===id).plan,'plus');assert.equal(inventory.servers.find(s=>s.id===id).source,'manual');assert.ok(!JSON.stringify(inventory).includes('VEX-'));assert.ok(!JSON.stringify(inventory).includes('csrf'));assert.equal((await fetch(url,{method:'POST',headers,body:'{}'})).status,404);
+});

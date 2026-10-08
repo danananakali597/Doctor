@@ -1,11 +1,11 @@
-export function giftKeysUI(root,{h,button,api,toast,refresh,guildId,operator,date,t=value=>value}){
+export function giftKeysUI(root,{h,button,api,toast,refresh,guildId,operator,date,t=value=>value,redeemEnabled=true}){
  const keyInput=h('input',{type:'text',placeholder:'Enter your VEX key',autocomplete:'off',maxlength:60,'aria-label':'Enter your VEX key'});
  const redeem=button('Activate one-month access',async()=>{
   redeem.disabled=true;
   try{await api(`/api/guilds/${guildId}/redeem-key`,{method:'POST',body:JSON.stringify({key:keyInput.value})});keyInput.value='';await refresh();toast('One-month access activated.');}
   catch(e){toast(e.message,true);}finally{redeem.disabled=false;}
  });
- root.append(h('section',{class:'panel'},h('h2',{},'Activate a gift key'),h('p',{class:'muted'},'Only the server owner can activate a key. Each key works once for one server. The month starts on activation; the same plan extends existing access. Activate a different plan after your current plan expires.'),h('label',{class:'field'},'Gift key',keyInput),redeem));
+ if(redeemEnabled)root.append(h('section',{class:'panel'},h('h2',{},'Activate a gift key'),h('p',{class:'muted'},'Only the server owner can activate a key. Each key works once for one server. The month starts on activation; the same plan extends existing access. Plus can upgrade to Ultimate immediately while preserving unused value.'),h('label',{class:'field'},'Gift key',keyInput),redeem));
  if(!operator)return;
  const tier=h('select',{'aria-label':'Gift plan'},h('option',{value:'plus'},'Plus'),h('option',{value:'ultimate'},'Ultimate'));
  const output=h('div'),list=h('div');
